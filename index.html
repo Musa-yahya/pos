@@ -11970,7 +11970,8 @@ class Component extends DCLogic {
 
   noop = () => {};
   h(s) { let h = 0; s = String(s); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff; return Math.abs(h); }
-  fmt(n) { return Math.round(n).toLocaleString('en-US'); }
+  // نفس toLocaleString('en-US') بالظبط — بس إعدادات التنسيق بتتجهّز مرة واحدة (كانت ٥٠٠٠ مرة مع كل حرف)
+  fmt(n) { return (Component._nfEn || (Component._nfEn = new Intl.NumberFormat('en-US'))).format(Math.round(n)); }
   cur() { return (this.state.settings && this.state.settings.currency) || 'ج.س'; }
   money(n) { return this.fmt(n) + ' ' + this.cur(); }
   // إجمالي السطر = السعر × الكمية، بيتحسب دايماً وقت العرض.
@@ -18322,7 +18323,13 @@ class Component extends DCLogic {
     if (p.length !== 3) return String(iso);
     const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
     if (isNaN(d.getTime())) return String(iso);
-    return d.toLocaleDateString('ar-EG') + ' (' + d.toLocaleDateString('ar-EG', { weekday: 'long' }) + ')';
+    const memo = this._dueMemo || (this._dueMemo = new Map());
+    const key = p.join('-');
+    if (memo.has(key)) return memo.get(key);
+    const txt = d.toLocaleDateString('ar-EG') + ' (' + d.toLocaleDateString('ar-EG', { weekday: 'long' }) + ')';
+    if (memo.size > 3000) memo.clear();
+    memo.set(key, txt);
+    return txt;
   }
   shareFileName(inv, ext) {
     const base = inv.status === 'quote' ? ('عرض-سعر-' + (inv.qno || '')) : ('فاتورة-' + (inv.no || ''));
