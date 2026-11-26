@@ -1154,24 +1154,74 @@
         </div>
       </sc-if>
 
-      <!-- INVOICES — كل الفواتير: أرقام اليوم + مراجعة + تفاصيل -->
-      <sc-if value="{{ isInvoices }}" hint-placeholder-val="{{ false }}">
-        <sc-if value="{{ retsHas }}" hint-placeholder-val="{{ false }}">
-          <details style="background:#fff;border:1px solid #f0dcb4;border-radius:14px;padding:12px 16px;margin-bottom:14px">
-            <summary style="cursor:pointer;font-weight:700;font-size:14px;color:#8a6a1e;list-style:none">↩ المرتجعات ({{ retsCount }}) — قيمتها {{ retsTotal }} <span style="font-size:11.5px;font-weight:400;color:#9aa6ba">— اضغط عشان تشوفها</span></summary>
-            <div style="overflow-x:auto;margin-top:10px">
-              <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px">
-                <sc-raw-thead><sc-raw-tr style="color:#7d8aa0;text-align:right"><sc-raw-th style="padding:6px">المرتجع</sc-raw-th><sc-raw-th style="padding:6px">التاريخ</sc-raw-th><sc-raw-th style="padding:6px">الفاتورة</sc-raw-th><sc-raw-th style="padding:6px">العميل</sc-raw-th><sc-raw-th style="padding:6px">الأصناف</sc-raw-th><sc-raw-th style="padding:6px">القيمة</sc-raw-th><sc-raw-th style="padding:6px">رجع للعميل</sc-raw-th><sc-raw-th style="padding:6px"></sc-raw-th></sc-raw-tr></sc-raw-thead>
+      <!-- ↩ المرتجعات — قسم براهو: أرقام، بحث، مرتجع جديد برقم الفاتورة، والجدول -->
+      <sc-if value="{{ isReturns }}" hint-placeholder-val="{{ false }}">
+        <div style="background:linear-gradient(160deg,#152a4a,#1d3a63);border-radius:16px;padding:18px 20px;margin-bottom:16px;color:#eaf0fa">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px"><span style="color:#c8a24a">↩</span> المرتجعات — {{ retScr.perLabel }}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ retScr.pers }}" as="p" hint-placeholder-count="4"><button sc-camel-on-click="{{ p.pick }}" style="{{ p.style }}">{{ p.label }}</button></sc-for>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px">
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px">
+              <div style="font-size:11.5px;color:#a9bcd8">عدد المرتجعات</div>
+              <div style="font-size:26px;font-weight:700;color:#f0d9a3;font-family:'IBM Plex Sans',sans-serif;margin-top:4px">{{ retScr.count }}</div>
+              <div style="font-size:11px;color:#8fa3c2;margin-top:2px">{{ retScr.units }} قطعة</div>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px">
+              <div style="font-size:11.5px;color:#a9bcd8">قيمة المرتجعات</div>
+              <div style="font-size:20px;font-weight:700;color:#fff;font-family:'IBM Plex Sans',sans-serif;margin-top:6px">{{ retScr.value }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px">
+              <div style="font-size:11.5px;color:#a9bcd8">رجع للعملاء (فلوس)</div>
+              <div style="font-size:20px;font-weight:700;color:#ffb4a8;font-family:'IBM Plex Sans',sans-serif;margin-top:6px">{{ retScr.refund }}</div>
+            </div>
+            <div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 14px">
+              <div style="font-size:11.5px;color:#a9bcd8">اتخصم من الديون والحسابات</div>
+              <div style="font-size:20px;font-weight:700;color:#bfe6cf;font-family:'IBM Plex Sans',sans-serif;margin-top:6px">{{ retScr.debt }}</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="flex:1 1 300px;background:#fff;border:1px solid #ecdcb4;border-radius:14px;padding:14px 16px">
+            <div style="font-weight:700;font-size:13.5px;color:#8a6a1e;margin-bottom:8px">↩ مرتجع جديد</div>
+            <div style="display:flex;gap:8px">
+              <input value="{{ retScr.invQ }}" sc-camel-on-input="{{ onRetInvQ }}" sc-camel-on-key-down="{{ onRetInvKey }}" placeholder="رقم الفاتورة — مثلاً A-12" style="flex:1;min-width:0;padding:10px 12px;border:1px solid #dbe2ec;border-radius:9px;font-family:inherit;font-size:13.5px;outline:none">
+              <button sc-camel-on-click="{{ retStartByNo }}" style="white-space:nowrap;padding:10px 16px;border:none;background:#1d3a63;color:#fff;border-radius:9px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">ابدأ المرتجع</button>
+            </div>
+            <div style="font-size:11px;color:#9aa6ba;margin-top:7px;line-height:1.7">أو افتح الفاتورة واضغط «↩ مرتجع». وأي صنف تشيلو أو تنقّص كميتو من فاتورة معتمدة بيتسجّل مرتجع هنا.</div>
+          </div>
+          <div style="flex:1 1 300px;background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:14px 16px">
+            <div style="font-weight:700;font-size:13.5px;color:#1d3a63;margin-bottom:8px">🔍 بحث في المرتجعات</div>
+            <input value="{{ retScr.q }}" sc-camel-on-input="{{ onRetQ }}" placeholder="عميل، رقم فاتورة أو مرتجع، صنف، موظف…" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #dbe2ec;border-radius:9px;font-family:inherit;font-size:13.5px;outline:none">
+            <sc-if value="{{ retScr.canScope }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:6px;margin-top:8px"><sc-for list="{{ retScr.scopes }}" as="b" hint-placeholder-count="2"><button sc-camel-on-click="{{ b.pick }}" style="{{ b.style }}">{{ b.label }}</button></sc-for></div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #e6ebf3;border-radius:14px;padding:6px 6px 10px">
+          <sc-if value="{{ retScr.has }}" hint-placeholder-val="{{ true }}">
+            <div style="overflow-x:auto">
+              <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:900px">
+                <sc-raw-thead><sc-raw-tr style="color:#7d8aa0;text-align:right;font-size:11.5px"><sc-raw-th style="padding:9px 8px">المرتجع</sc-raw-th><sc-raw-th style="padding:9px 8px">التاريخ</sc-raw-th><sc-raw-th style="padding:9px 8px">الفاتورة</sc-raw-th><sc-raw-th style="padding:9px 8px">العميل</sc-raw-th><sc-raw-th style="padding:9px 8px">الأصناف</sc-raw-th><sc-raw-th style="padding:9px 8px">القيمة</sc-raw-th><sc-raw-th style="padding:9px 8px">رجع للعميل</sc-raw-th><sc-raw-th style="padding:9px 8px">من الحساب</sc-raw-th><sc-raw-th style="padding:9px 8px">المخزون</sc-raw-th><sc-raw-th style="padding:9px 8px">بواسطة</sc-raw-th><sc-raw-th style="padding:9px 8px"></sc-raw-th></sc-raw-tr></sc-raw-thead>
                 <sc-raw-tbody>
-                  <sc-for list="{{ retsList }}" as="r" hint-placeholder-count="2">
-                    <sc-raw-tr style="border-top:1px solid #f1f4f8"><sc-raw-td style="padding:6px;font-weight:700">{{ r.no }}</sc-raw-td><sc-raw-td style="padding:6px;white-space:nowrap">{{ r.when }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.inv }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.customer }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.items }}</sc-raw-td><sc-raw-td style="padding:6px;font-weight:700;white-space:nowrap">{{ r.value }}</sc-raw-td><sc-raw-td style="padding:6px;white-space:nowrap">{{ r.refund }}</sc-raw-td><sc-raw-td style="padding:6px"><button sc-camel-on-click="{{ r.open }}" style="border:1px solid #dbe2ec;background:#fff;border-radius:7px;padding:4px 9px;font-family:inherit;font-size:11.5px;cursor:pointer">👁 الفاتورة</button></sc-raw-td></sc-raw-tr>
+                  <sc-for list="{{ retScr.rows }}" as="r" hint-placeholder-count="3">
+                    <sc-raw-tr style="border-top:1px solid #f1f4f8;vertical-align:top"><sc-raw-td style="padding:8px;font-weight:700;color:#8a6a1e;white-space:nowrap">{{ r.no }}</sc-raw-td><sc-raw-td style="padding:8px;white-space:nowrap;color:#5a6a82">{{ r.when }}</sc-raw-td><sc-raw-td style="padding:8px;white-space:nowrap;font-weight:600">{{ r.inv }}</sc-raw-td><sc-raw-td style="padding:8px">{{ r.customer }} <span style="font-size:10.5px;color:#8a6a1e">{{ r.branch }}</span></sc-raw-td><sc-raw-td style="padding:8px;line-height:1.6">{{ r.items }}<div style="font-size:10.5px;color:#9aa6ba">{{ r.note }}</div></sc-raw-td><sc-raw-td style="padding:8px;font-weight:700;white-space:nowrap">{{ r.value }}</sc-raw-td><sc-raw-td style="padding:8px;white-space:nowrap;color:#c0392b">{{ r.refund }}</sc-raw-td><sc-raw-td style="padding:8px;white-space:nowrap;color:#1d6f42">{{ r.debt }}</sc-raw-td><sc-raw-td style="padding:8px;white-space:nowrap">{{ r.stock }}</sc-raw-td><sc-raw-td style="padding:8px;font-size:11.5px;color:#5a6a82">{{ r.by }}</sc-raw-td><sc-raw-td style="padding:8px"><button sc-camel-on-click="{{ r.open }}" style="border:1px solid #dbe2ec;background:#fff;border-radius:7px;padding:4px 9px;font-family:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap">👁 الفاتورة</button></sc-raw-td></sc-raw-tr>
                   </sc-for>
                 </sc-raw-tbody>
               </sc-raw-table>
             </div>
-          </details>
-        </sc-if>
+            <sc-if value="{{ retScr.more }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#9aa6ba;padding:8px 10px">{{ retScr.moreText }}</div></sc-if>
+          </sc-if>
+          <sc-if value="{{ retScr.none }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:36px 12px;text-align:center;color:#9aa6ba;font-size:13px">↩ {{ retScr.emptyText }}</div>
+          </sc-if>
+        </div>
+      </sc-if>
 
+      <!-- INVOICES — كل الفواتير: أرقام اليوم + مراجعة + تفاصيل -->
+      <sc-if value="{{ isInvoices }}" hint-placeholder-val="{{ false }}">
         <!-- شريط اليوم: الأرقام اللي صاحب المحل بيقفل بيها يومه -->
         <div style="background:linear-gradient(160deg,#152a4a,#1d3a63);border-radius:16px;padding:18px 20px;margin-bottom:16px;color:#eaf0fa">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
@@ -8300,6 +8350,16 @@
             <sc-if value="{{ edit.hasRecorded }}" hint-placeholder-val="{{ false }}">
               <div style="font-size:11px;color:#1d3a63;background:#eef4fd;border:1px solid #d6e2f5;border-radius:8px;padding:7px 10px;margin-bottom:8px;line-height:1.7">◎ {{ edit.recordedText }}</div>
             </sc-if>
+            <sc-if value="{{ editRetOn }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#fffaf0;border:1px solid #ecdcb4;border-radius:9px;padding:9px 11px;margin-bottom:10px;font-size:12px;color:#7a5c14;line-height:1.75">
+                <div style="font-weight:700">{{ editRetText }}</div>
+                <div>{{ editRetHow }}</div>
+                <sc-if value="{{ editRetHasRefund }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;gap:6px;margin-top:6px"><button sc-camel-on-click="{{ editRetCash }}" style="{{ editRetCashStyle }}">💵 رجع كاش</button><button sc-camel-on-click="{{ editRetBank }}" style="{{ editRetBankStyle }}">🏦 رجع تحويل</button></div>
+                </sc-if>
+                <button sc-camel-on-click="{{ toggleEditRetRestock }}" style="margin-top:6px;border:none;background:none;padding:0;font-family:inherit;font-size:11.5px;color:#7a5c14;cursor:pointer;text-decoration:underline">{{ editRetRestockText }}</button>
+              </div>
+            </sc-if>
             <div style="{{ edit.remainStyle }}"><span>{{ edit.remainLabel }}</span><span style="font-family:'IBM Plex Sans',sans-serif;font-size:15px">{{ edit.remaining }}</span></div>
             <sc-if value="{{ edit.hasRemaining }}" hint-placeholder-val="{{ false }}">
               <div id="pos-edit-due" style="{{ edit.duePanelStyle }}">
@@ -12730,7 +12790,7 @@ class Component extends DCLogic {
   // =====================================================================
   static get SCREEN_PERMS() {
     return [
-      ['pos', 'نقطة البيع'], ['quotes', 'عروض الأسعار'], ['invoices', 'الفواتير'], ['items', 'الأصناف المباعة'], ['products', 'المنتجات'],
+      ['pos', 'نقطة البيع'], ['quotes', 'عروض الأسعار'], ['invoices', 'الفواتير'], ['returns', 'المرتجعات'], ['items', 'الأصناف المباعة'], ['products', 'المنتجات'],
       ['inventory', 'المخزون'], ['shelves', 'الرفوف وأماكن الأصناف'], ['customers', 'العملاء'], ['debts', 'الديون'],
       ['advances', 'الدفعات المقدمة'],
       ['dashboard', 'لوحة التحكم'], ['intel', 'Business Intelligence — ذكاء الأعمال (للإدارة)'], ['pricing', 'إدارة الأسعار'], ['rivals', 'أسعار المنافسين'],
@@ -16474,6 +16534,9 @@ class Component extends DCLogic {
       return;
     }
     if (advBack) ch.push('رجعت أمانة: ' + advBack.names.join('، '));
+    // ↩ الفاتورة معتمدة: اللي اتشال أو نقص مرتجع — الزيادة في المدفوع بترجع للعميل من درج اليوم
+    const retPlan = isQuote ? null : this.editRetPlan(E, paid, etotal);
+    if (retPlan) paid -= retPlan.refund;
     const remaining = etotal - paid;
     const due = this.cleanIso(E.dueDate);
     if (!isQuote && remaining > 0 && !due) {
@@ -16551,6 +16614,22 @@ class Component extends DCLogic {
         ch.push('خصم دفعة مقدمة: ' + this.advLabel(advPick));
       }
     }
+    let retRec = null;
+    if (retPlan) {
+      const units = retPlan.picked.reduce((s, r) => s + r.qty, 0);
+      if (!confirm('الفاتورة دي معتمدة — ' + units + ' قطعة اتشالت أو نقصت، وحتتسجّل مرتجع بقيمة ' + this.money(retPlan.value) + ':\n'
+        + retPlan.picked.map(r => '• ' + r.ar + ' ×' + r.qty).join('\n') + '\n'
+        + (retPlan.debtCut ? '• بيتخصم من حساب الفاتورة: ' + this.money(retPlan.debtCut) + '\n' : '')
+        + (retPlan.refund ? '• بيرجع للعميل ' + retPlan.method + ': ' + this.money(retPlan.refund) + (retPlan.method === 'تحويل' ? '' : ' (من درج اليوم)') + '\n' : '')
+        + (retPlan.restock ? '• القطع بترجع للمخزون' : '• القطع ما بترجع للمخزون (تالفة)') + '\n\nتواصل؟')) return;
+      const nowR = new Date();
+      retRec = { id: 'rt' + nowR.getTime().toString(36) + Math.random().toString(36).slice(2, 5),
+        no: this.docNext(this.allReturns('all'), 'no', 0, o.branchId || this.state.branchId),
+        ts: nowR.getTime(), date: nowR.toLocaleDateString('ar-EG'), time: nowR.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+        rows: retPlan.picked, value: retPlan.value, debtCut: retPlan.debtCut, refund: retPlan.refund, method: retPlan.refund ? retPlan.method : '',
+        restock: retPlan.restock, note: 'من تعديل الفاتورة', fromEdit: true, user: this.currentUser(), device: this.deviceLabel() };
+      ch.push('↩ مرتجع #' + retRec.no + ': ' + retPlan.picked.map(r => r.ar + ' ×' + r.qty).join('، ') + ' — ' + this.money(retPlan.value));
+    }
     const entry = { user: this.currentUser(), time: new Date().toLocaleString('ar-EG'), text: ch.length ? ch.join('، ') : 'إعادة حفظ دون تغيير' };
     const updated = { ...E, subtotal: esub, discount: edisc, tax: etax, total: etotal, paid, remaining,
       payment: payMethod, txnRef, employee: eEmp, note: eNote,
@@ -16561,6 +16640,8 @@ class Component extends DCLogic {
       ...(planPatch || {}),
       ...(stampPatch || {}) };
     delete updated._orig; delete updated.query; delete updated.invDate; delete updated.advPickId;
+    delete updated.retMethod; delete updated.retRestock;
+    if (retRec) updated.returns = this.invReturns(o).concat([retRec]);
     if (!eNote) delete updated.note;
     if (mixPatch) Object.assign(updated, mixPatch);
     else { delete updated.payCash; delete updated.payXfer; }
@@ -16587,13 +16668,21 @@ class Component extends DCLogic {
       const delta = {};
       o.rows.forEach(r => { delta[r.pn] = (delta[r.pn] || 0) - r.qty; });
       updated.rows.forEach(r => { delta[r.pn] = (delta[r.pn] || 0) + r.qty; });
+      // مرتجع تالف: القطع ما بترجع للمخزون
+      if (retRec && !retRec.restock) retRec.rows.forEach(r => { if (r.pn) delta[r.pn] = (delta[r.pn] || 0) + r.qty; });
       const changes = {};
       Object.keys(delta).forEach(pn => { if (delta[pn]) changes[pn] = Math.max(0, this.qtyIn(ebid, pn) - delta[pn]); });
       if (Object.keys(changes).length) this.commitStock(changes, ebid);
     }
     this.saveNow('invoices');
     this.audit('تعديل فاتورة', this.invLabel(updated) + ' — ' + entry.text);
-    this.toast('تم حفظ التعديلات');
+    if (retRec) {
+      this.audit('مرتجع', 'مرتجع #' + retRec.no + ' من ' + this.invLabel(updated) + ' (من تعديل الفاتورة) — ' + (updated.customer || '') + ' — '
+        + retRec.rows.map(r => r.ar + ' ×' + r.qty).join('، ') + ' — ' + this.money(retRec.value)
+        + (retRec.debtCut ? ' (من حساب الفاتورة ' + this.money(retRec.debtCut) + ')' : '') + (retRec.refund ? ' — استرداد ' + retRec.method + ' ' + this.money(retRec.refund) : '')
+        + (retRec.restock ? '' : ' — ما رجع للمخزون'));
+      this.toast('↩ اتحفظ التعديل واتسجّل مرتجع #' + retRec.no + ' — ' + this.money(retRec.value));
+    } else this.toast('تم حفظ التعديلات');
   };
 
   seedInvoices(products) {
@@ -16913,6 +17002,57 @@ class Component extends DCLogic {
     this.setState({ retForm: { invId: inv.id, qty: {}, restock: true, method: 'كاش', note: '' } });
   };
   closeReturn = () => this.setState({ retForm: null });
+  // مرتجع من شاشة المرتجعات: برقم الفاتورة (A-12 أو 12) — من غير ما تفتح الفاتورة
+  openReturnFor(inv) {
+    if (!inv || inv.status === 'quote') return;
+    if (!this.can('editInvoice')) return this.toast('المرتجع محتاج صلاحية «تعديل الفواتير»', 'err');
+    if (!(inv.rows || []).length) return this.toast('الفاتورة دي ما فيها أصناف', 'err');
+    this.setState({ retForm: { invId: inv.id, qty: {}, restock: true, method: inv.payment === 'تحويل' ? 'تحويل' : 'كاش', note: '' }, retInvQ: '' });
+  }
+  retFindInv(raw) {
+    const s = String(raw || '').trim(), S = this.state;
+    const m = /([A-Za-z]{1,3})\s*-?\s*(\d+)/.exec(s);
+    const code = m ? m[1].toUpperCase() : '';
+    const num = m ? m[2] : (s.match(/\d+/) || [])[0];
+    if (!num) return null;
+    const pool = this.finals(S.role === 'manager' ? 'all' : 'current');
+    const hit = v => [v.no, v.oldNo].some(x => x != null && x !== '' && String(this.docNum(x)) === String(Number(num)) && (!code || (this.docCodeOfNo(x) || this.branchCodeOf(v.branchId)) === code));
+    const list = pool.filter(hit);
+    return list.find(v => v.branchId === S.branchId) || list[0] || null;
+  }
+  retStartByNo = () => {
+    const raw = String(this.state.retInvQ || '').trim();
+    if (!raw) return this.toast('اكتب رقم الفاتورة', 'err');
+    const inv = this.retFindInv(raw);
+    if (!inv) return this.toast('ما لقيت فاتورة معتمدة بالرقم ' + raw, 'err');
+    this.openReturnFor(inv);
+  };
+  onRetInvQ = (e) => this.setState({ retInvQ: e.target.value });
+  onRetInvKey = (e) => { if (e.key === 'Enter') { e.preventDefault(); this.retStartByNo(); } };
+  onRetQ = (e) => this.setState({ retQ: e.target.value });
+  // ↩ تعديل فاتورة معتمدة: الصنف اللي اتشال أو كميته نقصت (مقارنة بالأصل) = مرتجع.
+  // القيمة بنفس حساب retCalc على الفاتورة الأصلية (الخصم والضريبة بالنسبة)، واللي بيرجع للعميل
+  // هو الزيادة في المدفوع على الإجمالي الجديد — ما أكتر من قيمة المرتجع.
+  editRetPlan(E, paid, etotal) {
+    const o = E && E._orig;
+    if (!o || o.status === 'quote' || E.status === 'quote') return null;
+    const key = r => r.pn || r.ar || '';
+    const now = {}, left = {};
+    (E.rows || []).forEach(r => { const k = key(r); now[k] = (now[k] || 0) + this.qnum(r.qty); });
+    (o.rows || []).forEach(r => { const k = key(r); left[k] = (left[k] || 0) + this.qnum(r.qty); });
+    Object.keys(left).forEach(k => { left[k] = Math.max(0, left[k] - (now[k] || 0)); });
+    const qty = {};
+    for (let i = (o.rows || []).length - 1; i >= 0; i--) {
+      const r = o.rows[i], k = key(r), take = Math.min(left[k] || 0, this.qnum(r.qty));
+      if (take > 0) { qty[i] = take; left[k] -= take; }
+    }
+    if (!Object.keys(qty).length) return null;
+    const c = this.retCalc(o, { qty });
+    if (!c.picked.length) return null;
+    const refund = Math.min(c.value, Math.max(0, Math.round(Number(paid) || 0) - etotal));
+    const method = E.retMethod === 'تحويل' || E.retMethod === 'كاش' ? E.retMethod : (o.payment === 'تحويل' ? 'تحويل' : 'كاش');
+    return { picked: c.picked, value: c.value, refund, debtCut: c.value - refund, method, restock: E.retRestock !== false };
+  }
   setRetQty = (i) => (e) => { const v = String(e.target.value).replace(/[^0-9]/g, ''); this.setState(s => (s.retForm ? { retForm: { ...s.retForm, qty: { ...s.retForm.qty, [i]: v } } } : null)); };
   retAllOf = (i) => () => this.setState(s => {
     if (!s.retForm) return null;
@@ -28802,7 +28942,7 @@ class Component extends DCLogic {
     // cashier simply has no Settings entry and cannot land on it.
     const navDef = [
       ['dashboard', 'لوحة التحكم', '▦'], ['intel', 'Business Intelligence', '✦'], ['pos', 'نقطة البيع', '▤'], ['quotes', 'عروض الأسعار', '◈'],
-      ['invoices', 'الفواتير', '▧'], ['items', 'الأصناف المباعة', '▨'], ['products', 'المنتجات', '▣'],
+      ['invoices', 'الفواتير', '▧'], ['returns', 'المرتجعات', '↩'], ['items', 'الأصناف المباعة', '▨'], ['products', 'المنتجات', '▣'],
       ['inventory', 'المخزون', '◫'], ['shelves', 'الرفوف', '⊞'], ['customers', 'العملاء', '◐'], ['debts', 'الديون', '₪'],
       ['advances', 'الدفعات المقدمة', '◎'],
       ['staff', 'الموظفين', '☺'],
@@ -28836,7 +28976,7 @@ class Component extends DCLogic {
       };
     });
 
-    const titles = { intel: ['BUSINESS INTELLIGENCE', 'ذكاء الأعمال — تحليل من بيانات المحل الحقيقية'], dashboard: ['لوحة التحكم', 'نظرة عامة على أداء المحل'], pos: ['نقطة البيع', 'إنشاء عرض سعر ثم اعتماده كفاتورة'], invoices: ['الفواتير', 'كل الفواتير — مراجعة وتفاصيل وأرقام اليوم'], items: ['الأصناف المباعة', 'كل صنف اتباع منو كم — والأكثر مبيعاً'], products: ['المنتجات', 'كتالوج قطع الغيار'], inventory: ['المخزون', 'متابعة الكميات والحالة'], shelves: ['الرفوف', 'كل صنف محطوط وين — ظاهر ليك وللموظفين بس، ما بيطلع في فاتورة العميل'], customers: ['العملاء', 'إدارة قاعدة العملاء'], debts: ['الديون', 'متابعة مديونيات العملاء ومواعيد السداد'], advances: ['الدفعات المقدمة', 'فلوس وصلت والبضاعة لسه ما خرجت — أمانة عند المحل'], reports: ['التقارير', 'تحليل المبيعات'], ai: ['المساعد الذكي', 'تحليل ذكي لبياناتك'], pricing: ['إدارة الأسعار', 'اضرب سعر الوون لكل منتج'], quotes: ['عروض الأسعار', 'الفواتير المبدئية بانتظار اعتماد العميل'], audit: ['سجل النشاط', 'كل عملية تمت داخل النظام — من، متى، وأين'], branches: ['مقارنة الفروع', 'أداء كل فرع جنباً إلى جنب'], staff: ['الموظفين', 'ملفات الموظفين — الرواتب والتقييم'], rivals: ['أسعار المنافسين', 'كشوف أسعار الموردين — قارن سعرك بسعر السوق'], profit: ['الأرباح', 'الربح الحقيقي بعد تكلفة الوصول والمصاريف'], purchases: ['المشتريات والمصاريف', 'فواتير الشراء من بره + المصاريف التشغيلية'], settings: ['الإعدادات', 'بيانات الشركة والنظام والنسخ الاحتياطي'] };
+    const titles = { returns: ['المرتجعات', 'كل اللي رجع من الفواتير المعتمدة'], intel: ['BUSINESS INTELLIGENCE', 'ذكاء الأعمال — تحليل من بيانات المحل الحقيقية'], dashboard: ['لوحة التحكم', 'نظرة عامة على أداء المحل'], pos: ['نقطة البيع', 'إنشاء عرض سعر ثم اعتماده كفاتورة'], invoices: ['الفواتير', 'كل الفواتير — مراجعة وتفاصيل وأرقام اليوم'], items: ['الأصناف المباعة', 'كل صنف اتباع منو كم — والأكثر مبيعاً'], products: ['المنتجات', 'كتالوج قطع الغيار'], inventory: ['المخزون', 'متابعة الكميات والحالة'], shelves: ['الرفوف', 'كل صنف محطوط وين — ظاهر ليك وللموظفين بس، ما بيطلع في فاتورة العميل'], customers: ['العملاء', 'إدارة قاعدة العملاء'], debts: ['الديون', 'متابعة مديونيات العملاء ومواعيد السداد'], advances: ['الدفعات المقدمة', 'فلوس وصلت والبضاعة لسه ما خرجت — أمانة عند المحل'], reports: ['التقارير', 'تحليل المبيعات'], ai: ['المساعد الذكي', 'تحليل ذكي لبياناتك'], pricing: ['إدارة الأسعار', 'اضرب سعر الوون لكل منتج'], quotes: ['عروض الأسعار', 'الفواتير المبدئية بانتظار اعتماد العميل'], audit: ['سجل النشاط', 'كل عملية تمت داخل النظام — من، متى، وأين'], branches: ['مقارنة الفروع', 'أداء كل فرع جنباً إلى جنب'], staff: ['الموظفين', 'ملفات الموظفين — الرواتب والتقييم'], rivals: ['أسعار المنافسين', 'كشوف أسعار الموردين — قارن سعرك بسعر السوق'], profit: ['الأرباح', 'الربح الحقيقي بعد تكلفة الوصول والمصاريف'], purchases: ['المشتريات والمصاريف', 'فواتير الشراء من بره + المصاريف التشغيلية'], settings: ['الإعدادات', 'بيانات الشركة والنظام والنسخ الاحتياطي'] };
     const now = new Date();
     // شاشة مش في القايمة (صلاحية اتشالت مثلاً) ما تكسّرش الرسمة
     const tt = titles[screen] || ['نظام نقطة البيع', ''];
@@ -28863,7 +29003,7 @@ class Component extends DCLogic {
       isInventory: screen === 'inventory', isCustomers: screen === 'customers', isDebts: screen === 'debts',
       isReports: screen === 'reports', isAi: screen === 'ai', isPricing: screen === 'pricing', isSettings: screen === 'settings',
       isQuotes: screen === 'quotes', isAudit: screen === 'audit', isBranches: screen === 'branches',
-      isInvoices: screen === 'invoices', isItems: screen === 'items', isStaff: screen === 'staff',
+      isInvoices: screen === 'invoices', isReturns: screen === 'returns', isItems: screen === 'items', isStaff: screen === 'staff',
       isRivals: screen === 'rivals', isAdvances: screen === 'advances',
       isProfit: screen === 'profit', isPurchases: screen === 'purchases', isShelves: screen === 'shelves',
       co: S.settings, employeeName: S.settings.employee,
@@ -32140,13 +32280,46 @@ class Component extends DCLogic {
     const iScope = invCanScope ? (S.invScope || 'current') : 'current';
     const tSum = iScope === 'current' ? dayNow : this.daySummary(_todayStr, iScope);
     const showCost = this.can('editPrices');
-    out.retsAll = this.allReturns(this.state.invScope || 'current');
-    out.retsHas = out.retsAll.length > 0;
-    out.retsCount = out.retsAll.length;
-    out.retsTotal = this.money(out.retsAll.reduce((s, r) => s + (Number(r.value) || 0), 0));
-    out.retsList = out.retsAll.slice(0, 60).map(r => ({ no: '#' + r.no, when: r.date || '', inv: r.invNo != null ? '#' + r.invNo : '—', customer: r.customer || '—',
-        items: (r.rows || []).map(x => x.ar + ' ×' + x.qty).join('، '), value: this.money(r.value || 0),
-        refund: r.refund ? this.money(r.refund) + ' ' + (r.method || '') : (r.debtCut ? 'من الدين' : '—'), open: () => this.openInvoiceNo(r.invId) }));
+    // ↩ شاشة المرتجعات — قسم براهو
+    out.retScr = { rows: [], pers: [], scopes: [] };
+    out.onRetQ = this.onRetQ; out.onRetInvQ = this.onRetInvQ; out.onRetInvKey = this.onRetInvKey; out.retStartByNo = this.retStartByNo;
+    if (screen === 'returns') {
+      const rCanScope = isManager && this.branches().length > 1;
+      const rScope = rCanScope ? (S.retScope || 'current') : 'current';
+      const per = S.retPer || 'month';
+      const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+      const from = per === 'today' ? d0.getTime() : (per === 'week' ? d0.getTime() - 6 * 86400000
+        : (per === 'month' ? new Date(d0.getFullYear(), d0.getMonth(), 1).getTime() : 0));
+      const rq = String(S.retQ || '').trim().toLowerCase();
+      const rAll = this.allReturns(rScope).filter(r => (Number(r.ts) || 0) >= from);
+      const rList = rq ? rAll.filter(r => [r.no, r.invNo, r.customer, r.phone, r.user, r.note, r.method]
+        .concat((r.rows || []).map(x => (x.ar || '') + ' ' + (x.pn || '')))
+        .some(x => String(x == null ? '' : x).toLowerCase().includes(rq))) : rAll;
+      const sum = k => rList.reduce((s, r) => s + (Number(r[k]) || 0), 0);
+      const chip = (on) => 'border:1px solid ' + (on ? '#c8a24a' : 'rgba(255,255,255,.22)') + ';background:' + (on ? 'rgba(200,162,74,.22)' : 'rgba(255,255,255,.06)')
+        + ';color:' + (on ? '#f0d9a3' : '#c9d5e6') + ';border-radius:9px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer';
+      const chip2 = (on) => 'border:1px solid ' + (on ? '#1d3a63' : '#dbe2ec') + ';background:' + (on ? '#eef4fd' : '#fff') + ';color:' + (on ? '#1d3a63' : '#7d8aa0')
+        + ';border-radius:8px;padding:5px 11px;font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer';
+      const perDef = [['today', 'اليوم'], ['week', 'آخر ٧ أيام'], ['month', 'الشهر ده'], ['all', 'الكل']];
+      out.retScr = {
+        perLabel: (perDef.find(p => p[0] === per) || perDef[2])[1],
+        pers: perDef.map(([k, label]) => ({ label, style: chip(per === k), pick: () => this.setState({ retPer: k }) })),
+        canScope: rCanScope,
+        scopes: [['current', 'الفرع ده'], ['all', 'كل الفروع']].map(([k, label]) => ({ label, style: chip2(rScope === k), pick: () => this.setState({ retScope: k }) })),
+        count: this.fmt(rList.length), value: this.money(sum('value')), refund: this.money(sum('refund')), debt: this.money(sum('debtCut')),
+        units: this.fmt(rList.reduce((s, r) => s + (r.rows || []).reduce((a, x) => a + this.qnum(x.qty), 0), 0)),
+        q: S.retQ || '', invQ: S.retInvQ || '',
+        has: rList.length > 0, none: !rList.length,
+        emptyText: rq ? 'ما في مرتجع بالبحث ده' : 'ما في مرتجعات في الفترة دي',
+        more: rList.length > 300, moreText: 'بيظهر آخر ٣٠٠ — ضيّق الفترة أو ابحث',
+        rows: rList.slice(0, 300).map(r => ({ no: '#' + r.no, when: (r.date || '') + (r.time ? ' ' + r.time : ''),
+          inv: r.invNo != null ? '#' + r.invNo : '—', customer: r.customer || '—', branch: rScope === 'all' ? this.branchName(r.branchId) : '',
+          items: (r.rows || []).map(x => x.ar + ' ×' + x.qty).join('، '), value: this.money(r.value || 0),
+          refund: r.refund ? this.money(r.refund) + ' ' + (r.method || 'كاش') : '—', debt: r.debtCut ? this.money(r.debtCut) : '—',
+          stock: r.restock === false ? '✖ تالف' : '✔ رجع', by: (r.user || '—') + (r.fromEdit ? ' • من التعديل' : ''),
+          note: r.note && r.note !== 'من تعديل الفاتورة' ? r.note : '', open: () => this.openInvoiceNo(r.invId) }))
+      };
+    }
     out.invTodayLabel = now.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     out.invToday = {
       count: this.fmt(tSum.count),
@@ -33738,6 +33911,22 @@ class Component extends DCLogic {
       out.editDropPlan = this.editDropPlan;
       out.saveEditApprove = this.saveEditApprove;
       out.saveEdit = this.saveEdit; out.cancelEdit = () => this.setState({ editingInvoice: null });
+      {
+        const rp = this.editRetPlan(E, epaid, etotal);
+        out.editRetOn = !!rp;
+        if (rp) {
+          out.editRetText = '↩ الفاتورة معتمدة — ' + rp.picked.map(r => r.ar + ' ×' + r.qty).join('، ') + ' حيتسجّل مرتجع بقيمة ' + this.money(rp.value);
+          out.editRetHow = [rp.debtCut ? 'بيتخصم من حساب الفاتورة ' + this.money(rp.debtCut) : '',
+            rp.refund ? 'بيرجع للعميل ' + this.money(rp.refund) + (rp.method === 'تحويل' ? ' تحويل' : ' كاش من درج اليوم') : ''].filter(Boolean).join(' • ');
+          out.editRetHasRefund = rp.refund > 0;
+          const mb = (on) => 'flex:1;padding:7px;border-radius:8px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;border:2px solid ' + (on ? '#1d3a63' : '#e2e8f1') + ';background:' + (on ? '#eef4fd' : '#fff') + ';color:' + (on ? '#1d3a63' : '#7d8aa0');
+          out.editRetCashStyle = mb(rp.method !== 'تحويل'); out.editRetBankStyle = mb(rp.method === 'تحويل');
+          out.editRetCash = () => this.editField('retMethod', 'كاش');
+          out.editRetBank = () => this.editField('retMethod', 'تحويل');
+          out.editRetRestockText = rp.restock ? '✔ القطع بترجع لمخزون الفرع — اضغط لو تالفة' : '✖ القطع ما بترجع للمخزون (تالفة) — اضغط عشان ترجع';
+          out.toggleEditRetRestock = () => this.setState(s => (s.editingInvoice ? { editingInvoice: { ...s.editingInvoice, retRestock: s.editingInvoice.retRestock === false } } : null));
+        }
+      }
     } else { out.edit = { rows: [], results: [], audit: [], duePresets: [], datePresets: [], discPresets: [], custHits: [], advList: [] }; out.canBackdate = this.can('backdate'); out.canEditDiscount = this.can('discount'); }
 
     // ---- SETTINGS ----
