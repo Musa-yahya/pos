@@ -5777,6 +5777,10 @@
                 </div>
               </sc-for>
             </div>
+            <div style="margin-top:14px;border-top:1px dashed #e6ebf3;padding-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:240px;font-size:12px;color:#5a6577;line-height:1.8"><b style="color:#152a4a">🔢 إعادة ترقيم الفواتير</b> — {{ renumText }}</div>
+              <button sc-camel-on-click="{{ renumInvoices }}" style="padding:9px 14px;border:1px solid #f0dcb4;border-radius:9px;background:#fff7e9;color:#8a6a1e;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer">🔢 رقّم من 1</button>
+            </div>
           </div>
           </sc-if>
 
@@ -13638,7 +13642,7 @@ class Component extends DCLogic {
     const code = m ? m[1].toUpperCase() : '';
     const n = m ? m[2] : (s.match(/\d{3,}/) || [])[0];
     if (!n) return null;
-    const hit = v => [v.no, v.qno].some(x => x != null && x !== '' && String(this.docNum(x)) === String(Number(n)) && (!code || this.docCodeOfNo(x) === code));
+    const hit = v => [v.no, v.qno, v.oldNo].some(x => x != null && x !== '' && String(this.docNum(x)) === String(Number(n)) && (!code || this.docCodeOfNo(x) === code));
     const list = (S.invoices || []).filter(hit);
     return list.find(v => v.branchId === S.branchId) || list[0] || null;
   }
@@ -15652,6 +15656,38 @@ class Component extends DCLogic {
 
   // مفتاح العميل الموحّد — الرقم أدق من الاسم، نفس قاعدة دليل العملاء ودفتر
   // الديون ودفتر الدفعات، عشان الكرت والتفاصيل والمساعد يجمّعوا نفس السطور.
+  // ---- إعادة ترقيم الفواتير النهائية من 1، كل فرع براهو، بالترتيب من الأقدم ----
+  renumInvoices = () => {
+    if (!this.can('manageBranches')) return this.toast('إعادة الترقيم محتاجة صلاحية إدارة الفروع', 'err');
+    const S = this.state;
+    const plan = this.branches().map(b => ({ b, code: this.branchCodeOf(b.id), list: S.invoices.filter(v => v.status !== 'quote' && v.branchId === b.id) }))
+      .filter(p => p.list.length);
+    if (!plan.length) return this.toast('ما في فواتير نهائية', 'err');
+    const lines = plan.map(p => '• ' + (p.b.name || p.b.id) + ': ' + p.list.length + ' فاتورة ← من ' + (p.code ? p.code + '-1' : '1')
+      + ' لحدي ' + (p.code ? p.code + '-' : '') + p.list.length);
+    if (!confirm('إعادة ترقيم كل الفواتير النهائية من 1 — كل فرع براهو، بالترتيب من الأقدم:\n' + lines.join('\n')
+      + '\n\nالرقم القديم بيتحفظ مع الفاتورة، والبحث والمساعد بيلقوها بيهو. عروض الأسعار ما بتتغيّر.'
+      + '\nالأحسن الأجهزة التانية ما تكون بتبيع في اللحظة دي — المزامنة بتوصّل الأرقام الجديدة ليها.'
+      + '\nحتتعمل نسخة احتياطية الأول.\n\nتواصل؟')) return;
+    this.makeBackup('قبل إعادة ترقيم الفواتير', true, true);
+    const map = {};
+    plan.forEach(p => {
+      p.list.slice().sort((a, b) => ((a.ts || a.createdTs || 0) - (b.ts || b.createdTs || 0)) || String(a.id).localeCompare(String(b.id)))
+        .forEach((v, i) => { map[v.id] = p.code ? p.code + '-' + (i + 1) : (i + 1); });
+    });
+    const has = (k) => Object.prototype.hasOwnProperty.call(map, k);
+    let changed = 0;
+    const invoices = S.invoices.map(v => {
+      if (!has(v.id) || String(map[v.id]) === String(v.no)) return v;
+      changed++;
+      return { ...v, no: map[v.id], oldNo: v.oldNo != null && v.oldNo !== '' ? v.oldNo : v.no };
+    });
+    const advances = (S.advances || []).map(a => (a.links || []).some(l => has(l.invId))
+      ? { ...a, links: a.links.map(l => has(l.invId) ? { ...l, invNo: map[l.invId] } : l) } : a);
+    this.setState({ invoices, advances, activeInvoice: null }, () => this.saveNow('invoices', 'advances'));
+    this.audit('إعادة ترقيم الفواتير', lines.map(x => x.replace(/^•\s*/, '')).join(' — ') + ' — اتغيّر رقم ' + changed + ' فاتورة');
+    this.toast(changed ? 'اتعادت أرقام ' + changed + ' فاتورة — الرقم القديم محفوظ والبحث بيلقاه' : 'الأرقام كانت مرتّبة أصلاً — ما اتغيّر حاجة');
+  };
   custBranchTag(c) {
     if (!c || !c.br || this.branches().length < 2) return '';
     return Object.keys(c.br).map(id => { const b = this.branchById(id); return b ? String(b.name || '').replace(/^فرع\s+/, '').trim() : ''; })
@@ -16539,7 +16575,7 @@ class Component extends DCLogic {
   }
   finals(scope) { return this.branchInvoices(scope).filter(v => v.status !== 'quote'); }
   quotes(scope) { return this.branchInvoices(scope).filter(v => v.status === 'quote'); }
-  nextFinalNo(bid) { return this.docNext(this.state.invoices, 'no', 1041, bid); }
+  nextFinalNo(bid) { return this.docNext(this.state.invoices, 'no', 0, bid); }
   nextQuoteNo(bid) { return this.docNext(this.state.invoices, 'qno', 1000, bid); }
   invById(id) { return this.state.invoices.find(v => v.id === id); }
 
@@ -28098,10 +28134,10 @@ class Component extends DCLogic {
   }
   // نص بحث واحد للفاتورة: رقمها، العميل، الهاتف، الدفع، البائع، وكل أصنافها
   invHay(v) {
-    const key = (v.id || '') + '|' + (v.ts || 0) + '|' + ((v.rows || []).length) + '|' + (v.total || 0);
+    const key = (v.id || '') + '|' + (v.ts || 0) + '|' + ((v.rows || []).length) + '|' + (v.total || 0) + '|' + (v.no || '') + '|' + (v.oldNo || '');
     this._hayCache = this._hayCache || {};
     if (this._hayCache[key]) return this._hayCache[key];
-    const bits = [v.no ? '#' + v.no : '', v.qno ? 'q' + v.qno : '', v.customer, v.phone, v.payment,
+    const bits = [v.no ? '#' + v.no : '', v.oldNo ? '#' + v.oldNo : '', v.qno ? 'q' + v.qno : '', v.customer, v.phone, v.payment,
       v.employee, v.createdBy, v.approvedBy, v.date, this.invDay(v), v.txnRef, v.branchName];
     // رقم القطعة بيتكتب بشرطة وبدونها — زي محرك بحث المنتجات بالظبط، عشان
     // «3515026900» تلاقي «35150-26900» (ده كمان مسار قارئ الباركود).
@@ -33993,9 +34029,9 @@ class Component extends DCLogic {
       isCurrent: b.id === S.branchId,
       code: this.cleanBranchCode(b.code), codeHint: this.branchCodeOf(b.id) || '—', setCode: this.setBranchCode(b.id),
       codeText: this.branchCodeOf(b.id)
-        ? ('فواتير الفرع ده بتطلع كدا: ' + this.docPeek(S.invoices, 'no', 1041, b.id) + ' — كل فرع ليهو تسلسل براهو، فجهازين في فرعين ما بيدّو نفس الرقم. حرف إنجليزي (لحدي ٣ حروف)'
+        ? ('فواتير الفرع ده بتطلع كدا: ' + this.docPeek(S.invoices, 'no', 0, b.id) + ' — كل فرع ليهو تسلسل براهو، فجهازين في فرعين ما بيدّو نفس الرقم. حرف إنجليزي (لحدي ٣ حروف)'
           + (this.cleanBranchCode(b.code) ? '.' : '، والحرف ده اتختار تلقائي — اكتب غيرو لو داير.'))
-        : 'فرع واحد: الفواتير برقم بس (' + this.docPeek(S.invoices, 'no', 1041, b.id) + '). اكتب حرف لو داير حرف قبل الرقم.',
+        : 'فرع واحد: الفواتير برقم بس (' + this.docPeek(S.invoices, 'no', 0, b.id) + '). اكتب حرف لو داير حرف قبل الرقم.',
       setName: this.setBranchField(b.id, 'name'),
       setAddress: this.setBranchField(b.id, 'address'),
       setPhones: this.setBranchField(b.id, 'phones'),
@@ -34005,6 +34041,15 @@ class Component extends DCLogic {
       del: this.deleteBranch(b.id)
     }));
     out.addBranch = this.addBranch;
+    out.renumInvoices = this.renumInvoices;
+    out.renumText = (() => {
+      const parts = this.branches().map(b => {
+        const k = S.invoices.filter(v => v.status !== 'quote' && v.branchId === b.id).length;
+        return k ? String(b.name || '').replace(/^فرع\s+/, '').trim() + ' ' + k : '';
+      }).filter(Boolean);
+      return 'كل فرع فواتيرو بتترتب بالتاريخ من الأقدم وبتبدأ من 1' + (parts.length ? ' (' + parts.join(' • ') + ' فاتورة)' : '')
+        + '. الرقم القديم بيتحفظ والبحث بيلقاه، وعروض الأسعار ما بتتغيّر. بتتعمل نسخة احتياطية الأول.';
+    })();
     // extend each settings user row with branch access checkboxes
     out.usersList = out.usersList.map((row, i) => {
       const u = allUsers[i];
