@@ -26886,13 +26886,14 @@ class Component extends DCLogic {
   }
   cloudSess() {
     if (this._cloudSess === undefined) {
-      try { this._cloudSess = JSON.parse(localStorage.getItem('pos_cloud_session') || 'null'); } catch (e) { this._cloudSess = null; }
+      try { localStorage.removeItem('pos_cloud_session'); } catch (e) {}   // دخول محفوظ من نسخة قديمة — بيتمسح
+      try { this._cloudSess = JSON.parse(sessionStorage.getItem('pos_cloud_session') || 'null'); } catch (e) { this._cloudSess = null; }
     }
     return this._cloudSess;
   }
   cloudSaveSess(s) {
     this._cloudSess = s || null;
-    try { if (s) localStorage.setItem('pos_cloud_session', JSON.stringify(s)); else localStorage.removeItem('pos_cloud_session'); } catch (e) {}
+    try { if (s) sessionStorage.setItem('pos_cloud_session', JSON.stringify(s)); else sessionStorage.removeItem('pos_cloud_session'); } catch (e) {}
   }
   cloudSessOf(j, old) {
     return { access_token: j.access_token, refresh_token: j.refresh_token || (old && old.refresh_token),
@@ -27003,8 +27004,14 @@ class Component extends DCLogic {
         try { const r2 = await this.cloudReq('/rest/v1/memberships?select=branch_id&user_id=eq.' + encodeURIComponent(uid)); me.branches = (r2.data || []).map(x => x.branch_id); } catch (e) {}
       }
       // نسخة الموقع: أول دخول = تحميل بيانات المحل كلها
+      if (me && Component.ONLINE_BUILD && this.syncState().on && this.syncState().uid && this.syncState().uid !== me.user_id) {
+        this.syncStop(); this._sy = { on: false }; this.syncSave(); this.setState(this.syncEmptyPatch());
+      }
       if (me && Component.ONLINE_BUILD && !this.syncState().on) { this.cloudUi({ me, meChecked: true }); this.syncJoin(true); return; }
-      if (me && Component.ONLINE_BUILD) this.syncAdoptUser(me, true);
+      if (me && Component.ONLINE_BUILD) {
+        const sy0 = this.syncState(); if (!sy0.uid) { sy0.uid = me.user_id; this.syncSave(); }
+        this.syncAdoptUser(me, true); this.syncTick();
+      }
       this.cloudUi({ me, meChecked: true, ...(me ? {} : { err: 'الحساب ده ما مربوط بملف موظف في القاعدة — كلّم المدير' }) });
       if (me && me.role === 'manager') this.cloudLoadUsers();
     } catch (e) { this.cloudUi({ meChecked: true, err: this.cloudErr(e) }); }
@@ -27878,7 +27885,7 @@ class Component extends DCLogic {
       + (hasLocal ? ' (' + S.invoices.length + ' فاتورة — بتتعمل ليها نسخة احتياطية الأول)' : '') + '.\n\nمتأكد؟')) return;
     if (hasLocal || (S.products || []).length) this.makeBackup('قبل أخد البيانات من القاعدة المركزية', true, true);
     this.cloudUi({ busy: 'join', err: '', msg: '' });
-    this._sy = { on: true, mode: 'join', base: {}, stockBase: {}, applied: {}, mvPending: [], rejected: [], cursor: 0, recheck: null, mvSeq: 0, joinedAt: Date.now() };
+    this._sy = { on: true, mode: 'join', base: {}, stockBase: {}, applied: {}, mvPending: [], rejected: [], cursor: 0, recheck: null, mvSeq: 0, joinedAt: Date.now(), uid: (ui.me && ui.me.user_id) || '' };
     this.syncSave();
     this.setState(this.syncEmptyPatch());
     try {
