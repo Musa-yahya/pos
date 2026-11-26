@@ -819,7 +819,7 @@
                   <sc-for list="{{ custSug }}" as="s" hint-placeholder-count="0">
                     <button sc-camel-on-mouse-down="{{ s.pick }}" style="{{ s.style }}" style-hover="background:#fffdf7">
                       <div style="display:flex;align-items:center;gap:8px">
-                        <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:#152a4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</span>
+                        <span style="flex:1;min-width:0;font-size:12.5px;font-weight:600;color:#152a4a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</span><sc-if value="{{ s.hasBr }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:600;color:#1d5fa8;background:#e7f0fb;border-radius:20px;padding:1px 7px;flex-shrink:0;white-space:nowrap">{{ s.brTag }}</span></sc-if>
                         <sc-if value="{{ s.hasStars }}" hint-placeholder-val="{{ false }}"><span style="font-size:11.5px;color:#e0a800;white-space:nowrap">{{ s.stars }}</span></sc-if>
                         <span style="font-size:10px;color:{{ s.tagFg }};background:{{ s.tagBg }};padding:1px 7px;border-radius:6px;white-space:nowrap">{{ s.tag }}</span>
                       </div>
@@ -3268,7 +3268,7 @@
             <button sc-camel-on-click="{{ c.open }}" title="دوس عشان تشوف ملفه كاملاً" style="{{ c.cardStyle }}">
               <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px">
                 <div style="width:42px;height:42px;border-radius:50%;background:#eef2f9;color:#1d3a63;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">{{ c.initial }}</div>
-                <div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div><div style="font-size:12px;color:#7d8aa0;font-family:'IBM Plex Sans',sans-serif">{{ c.phone }}</div></div>
+                <div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div><sc-if value="{{ c.hasBr }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block;font-size:10.5px;font-weight:600;color:#1d5fa8;background:#e7f0fb;border-radius:20px;padding:1px 8px;margin:2px 0">⌂ {{ c.brTag }}</span></sc-if><div style="font-size:12px;color:#7d8aa0;font-family:'IBM Plex Sans',sans-serif">{{ c.phone }}</div></div>
               </div>
               <div style="font-size:12.5px;color:#4a5769;line-height:1.9">
                 <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📍 {{ c.city }}</div>
@@ -15608,7 +15608,7 @@ class Component extends DCLogic {
     const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
     const digits = (s) => (s || '').replace(/[^0-9]/g, '');
     const list = [], byPhone = {}, byName = {};
-    const add = (rawName, rawPhone, ts) => {
+    const add = (rawName, rawPhone, ts, bid) => {
       const nm = norm(rawName), ph = digits(rawPhone);
       if ((!nm || nm === 'عميل نقدي') && !ph) return null;
       const nk = nm.toLowerCase();
@@ -15616,7 +15616,7 @@ class Component extends DCLogic {
       // merge by name only when it cannot contradict a phone we already have
       if (!g && nk && byName[nk] && (!ph || !byName[nk].phone)) g = byName[nk];
       if (!g) {
-        g = { name: nm, phone: ph, car: '', city: '', manual: false, count: 0, spent: 0, lastTs: 0, buyTs: 0, buyDate: '' };
+        g = { name: nm, phone: ph, car: '', city: '', manual: false, count: 0, spent: 0, lastTs: 0, buyTs: 0, buyDate: '', br: {} };
         list.push(g);
       }
       if (!g.name && nm) g.name = nm;
@@ -15624,11 +15624,11 @@ class Component extends DCLogic {
       if (g.phone) byPhone[g.phone] = g;
       if (g.name) byName[g.name.toLowerCase()] = g;
       if ((ts || 0) > g.lastTs) g.lastTs = ts || 0;
+      if (bid) g.br[bid] = 1;
       return g;
     };
     S.customersManual.forEach(c => {
-      if (c.branchId && c.branchId !== S.branchId) return;
-      const g = add(c.name, c.phone, 0);
+      const g = add(c.name, c.phone, 0, c.branchId || S.branchId);
       if (!g) return;
       g.manual = true;
       if (c.car) g.car = norm(c.car);
@@ -15636,15 +15636,15 @@ class Component extends DCLogic {
     });
     // فاتورة زبون عابر اسمها بقى «٥ قلب طرمبة» — دا وصف بضاعة مش عميل،
     // فما بتدخل الدليل أبداً، وإلا كل بيعة نقدي بتبقى «عميل جديد».
-    (invList || this.finals()).forEach(v => {
+    (invList || this.finals('all')).forEach(v => {
       if (this.isWalkIn(v)) return;
-      const g = add(v.customer, v.phone, v.ts);
+      const g = add(v.customer, v.phone, v.ts, v.branchId);
       if (!g) return;
       g.count++; g.spent += (v.total || 0);
       if ((v.ts || 0) >= g.buyTs) { g.buyTs = v.ts || 0; g.buyDate = v.date || ''; }
     });
-    this.quotes().forEach(v => { if (!this.isWalkIn(v)) add(v.customer, v.phone, v.ts); });
-    (S.reservations || []).forEach(r => { if (r.branchId === S.branchId) add(r.name, r.phone, r.ts); });
+    this.quotes('all').forEach(v => { if (!this.isWalkIn(v)) add(v.customer, v.phone, v.ts, v.branchId); });
+    (S.reservations || []).forEach(r => add(r.name, r.phone, r.ts, r.branchId));
     list.sort((a, b) => (b.lastTs - a.lastTs) || (b.count - a.count) || String(a.name).localeCompare(String(b.name), 'ar'));
     if (!invList) this._dirCache = list;
     return list;
@@ -15652,6 +15652,11 @@ class Component extends DCLogic {
 
   // مفتاح العميل الموحّد — الرقم أدق من الاسم، نفس قاعدة دليل العملاء ودفتر
   // الديون ودفتر الدفعات، عشان الكرت والتفاصيل والمساعد يجمّعوا نفس السطور.
+  custBranchTag(c) {
+    if (!c || !c.br || this.branches().length < 2) return '';
+    return Object.keys(c.br).map(id => { const b = this.branchById(id); return b ? String(b.name || '').replace(/^فرع\s+/, '').trim() : ''; })
+      .filter(Boolean).join(' • ');
+  }
   custKey(name, phone) {
     const d = String(phone == null ? '' : phone).replace(/[^0-9]/g, '');
     if (d.length >= 7) return 'p:' + d.slice(-9);
@@ -15679,13 +15684,14 @@ class Component extends DCLogic {
     const c = this.customerDirectory().find(x => this.custKey(x.name, x.phone) === key);
     if (!c) { this._fileCache[key] = null; return null; }
     const man = (this.state.customersManual || []).find(m =>
-      (!m.branchId || m.branchId === this.state.branchId) && this.custKey(m.name, m.phone) === key);
+      (!m.branchId || m.branchId === this.state.branchId) && this.custKey(m.name, m.phone) === key)
+      || (this.state.customersManual || []).find(m => this.custKey(m.name, m.phone) === key);
     const owns = (name, phone) => this.custOwns(c, name, phone);
     const byNew = (a, b) => (b.ts || 0) - (a.ts || 0);
-    const invoices = this.finals().filter(v => owns(v.customer, v.phone)).sort(byNew);
-    const quotes = this.quotes().filter(v => owns(v.customer, v.phone)).sort(byNew);
-    const advances = this.branchAdvances('current').filter(a => owns(a.customer, a.phone)).sort(byNew);
-    const debtRows = this.debtBook().rows.filter(r => owns(r.customer, r.phone));
+    const invoices = this.finals('all').filter(v => owns(v.customer, v.phone)).sort(byNew);
+    const quotes = this.quotes('all').filter(v => owns(v.customer, v.phone)).sort(byNew);
+    const advances = this.branchAdvances('all').filter(a => owns(a.customer, a.phone)).sort(byNew);
+    const debtRows = this.debtBook('all').rows.filter(r => owns(r.customer, r.phone));
     const spent = invoices.reduce((s, v) => s + (Number(v.total) || 0), 0);
     const owed = debtRows.reduce((s, r) => s + r.amount, 0);
     const dueNow = debtRows.filter(r => r.overdue).reduce((s, r) => s + r.amount, 0);
@@ -28977,7 +28983,7 @@ class Component extends DCLogic {
     out.onCustBlur = this.closeCustSug;
     out.onCustKey = e => { if (e.key === 'Escape') { clearTimeout(this._custBlurT); this.setState({ custSugOpen: false }); } };
     // suggestions: filtered by whichever of the two boxes is being typed in
-    const custDir = this.customerDirectory(finalInv);
+    const custDir = this.customerDirectory();
     const cq = (S.custSugField === 'phone' ? S.customerPhone : S.customerName).replace(/\s+/g, ' ').trim().toLowerCase();
     const cqd = cq.replace(/[^0-9]/g, '');
     const custHits = (cq
@@ -28999,6 +29005,7 @@ class Component extends DCLogic {
       const warn = redTags.map(t => '⛔ ' + this.custTagLabel(t))
         .concat(sNote ? ['📌 ' + (sNote.length > 48 ? sNote.slice(0, 47) + '…' : sNote)] : []).join('  ');
       return {
+        brTag: this.custBranchTag(c), hasBr: !!this.custBranchTag(c),
         stars: sr && sr.stars ? this.starStr(sr.stars) : '',
         hasStars: !!(sr && sr.stars),
         warn, hasWarn: !!warn,
@@ -29991,7 +29998,7 @@ class Component extends DCLogic {
     // المساعد والاقتراحات في شاشة البيع)، فالزبون بيظهر مرة واحدة حتى لو اسمه
     // اتكتب بشكلين، والأرقام اللي على الكرت هي نفس أرقام ملفه لما تدوس عليه.
     const cstDir = this.customerDirectory();
-    const dbtBook = this.debtBook();
+    const dbtBook = this.debtBook('all');
     const owedOf = {}, heldOf = {};
     dbtBook.rows.forEach(r => {
       const c = cstDir.find(x => this.custOwns(x, r.customer, r.phone));
@@ -29999,7 +30006,7 @@ class Component extends DCLogic {
       const k = this.custKey(c.name, c.phone);
       owedOf[k] = (owedOf[k] || 0) + r.amount;
     });
-    this.branchAdvances('current').forEach(a => {
+    this.branchAdvances('all').forEach(a => {
       const h = this.advHeld(a);
       if (h <= 0) return;
       const c = cstDir.find(x => this.custOwns(x, a.customer, a.phone));
@@ -30024,6 +30031,7 @@ class Component extends DCLogic {
       const owed = owedOf[k] || 0, held = heldOf[k] || 0;
       return {
         key: k, manual: c.manual, canEdit: c.manual && this.can('editCustomers'),
+        brTag: this.custBranchTag(c), hasBr: !!this.custBranchTag(c),
         name: c.name || 'عميل', phone: c.phone || '—',
         car: c.car || '—', city: c.city || '—',
         spent: this.money(c.spent || 0),
