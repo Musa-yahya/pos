@@ -18374,9 +18374,9 @@ class Component extends DCLogic {
     return txt;
   }
   shareFileName(inv, ext) {
-    const base = inv.status === 'quote' ? ('عرض-سعر-' + (inv.qno || '')) : ('فاتورة-' + (inv.no || ''));
-    const cust = String(inv.customer || '').replace(/[\\/:*?"<>|]/g, ' ').trim().slice(0, 30);
-    return (base + (cust ? '-' + cust : '')).replace(/\s+/g, '-') + '.' + ext;
+    const label = inv.status === 'quote' ? ('عرض سعر ' + this.qLabel(inv)) : ('فاتورة ' + (inv.no || ''));
+    const cust = String(inv.customer || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    return [label, cust, this.invDay(inv)].filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]/g, '-') + '.' + ext;
   }
   // رقم محلي (09xxxxxxxx) → رقم دولي بدون + كما يطلبه رابط wa.me
   waPhone(raw) {
@@ -18784,7 +18784,7 @@ class Component extends DCLogic {
     for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
     return u;
   }
-  buildImagePdf(jpeg, iw, ih) {
+  buildImagePdf(jpeg, iw, ih, title) {
     const A4W = 595.28, A4H = 841.89, MG = 20;
     const dw = A4W - MG * 2;
     const dh = dw * ih / iw;
@@ -18802,6 +18802,11 @@ class Component extends DCLogic {
       null,   // الصورة — بتتكتب بايتات خام
       '<</Length ' + content.length + '>>\nstream\n' + content + 'endstream'
     ];
+    if (title) {
+      let hx = '<FEFF';
+      for (const ch of String(title)) { const c = ch.codePointAt(0); const u = c > 0xFFFF ? [0xD800 + ((c - 0x10000) >> 10), 0xDC00 + ((c - 0x10000) & 0x3FF)] : [c]; u.forEach(v => { hx += ('000' + v.toString(16).toUpperCase()).slice(-4); }); }
+      objs.push('<</Title' + hx + '>/Producer(POS)>>');
+    }
     const chunks = []; let len = 0;
     const add = (u8) => { chunks.push(u8); len += u8.length; };
     const addS = (s) => add(this.latin1(s));
@@ -18821,7 +18826,7 @@ class Component extends DCLogic {
     const xrefAt = len;
     let x = 'xref\n0 ' + (objs.length + 1) + '\n0000000000 65535 f \n';
     offsets.forEach(o => { x += ('0000000000' + o).slice(-10) + ' 00000 n \n'; });
-    x += 'trailer\n<</Size ' + (objs.length + 1) + '/Root 1 0 R>>\nstartxref\n' + xrefAt + '\n%%EOF\n';
+    x += 'trailer\n<</Size ' + (objs.length + 1) + '/Root 1 0 R' + (title ? '/Info ' + objs.length + ' 0 R' : '') + '>>\nstartxref\n' + xrefAt + '\n%%EOF\n';
     addS(x);
     const out = new Uint8Array(len);
     let p = 0;
@@ -18829,10 +18834,128 @@ class Component extends DCLogic {
     return new Blob([out], { type: 'application/pdf' });
   }
   invoicePdfBlob(inv) {
-    return this.invoiceCanvas(inv).then(cv => {
+    const title = this.shareFileName(inv, 'pdf').replace(/\.pdf$/, '');
+    const old = () => this.invoiceCanvas(inv).then(cv => {
       const jpeg = this.dataUrlBytes(cv.toDataURL('image/jpeg', 0.92));
-      return this.buildImagePdf(jpeg, cv.width, cv.height);
+      return this.buildImagePdf(jpeg, cv.width, cv.height, title);
     });
+    const src = document.getElementById('pos-print');
+    if (!src) return old();
+    return this.docCanvas(src).then(cv => cv
+      ? this.buildImagePdf(this.dataUrlBytes(cv.toDataURL('image/jpeg', 0.92)), cv.width, cv.height, title)
+      : old()).catch(() => old());
+  }
+  // نسخة من المستند بعرض الورق (A4 = 794px، حراري = 320px) برة الشاشة — عشان وضع التلفون ما يأثّر عليها —
+  // بدون الحاجات اللي الطباعة بتخفيها (أزرار الشاشة، سجل السداد الخاص بالمحل)
+  docCanvas(src) {
+    const fmtW = this.state.invFormat === 'thermal' ? 320 : 794;
+    const wrap = document.createElement('div');
+    wrap.setAttribute('style', 'position:fixed;left:-30000px;top:0;width:' + fmtW + 'px;background:#fff;pointer-events:none');
+    const node = src.cloneNode(true);
+    node.removeAttribute('id');
+    node.querySelectorAll('[data-screen-only],[data-print="shop"],button,input,select,textarea,script').forEach(e => e.remove());
+    node.style.width = fmtW + 'px'; node.style.maxWidth = 'none'; node.style.margin = '0'; node.style.boxShadow = 'none';
+    wrap.appendChild(node);
+    document.body.appendChild(wrap);
+    const ready = (document.fonts && document.fonts.ready) || Promise.resolve();
+    return ready.then(() => new Promise(r => setTimeout(r, 80))).then(() => {
+      try { return this.paintNode(node); } finally { wrap.remove(); }
+    }, (e) => { wrap.remove(); throw e; });
+  }
+  // بيرسم المستند زي ما المتصفح رصّو: الخلفيات والإطارات والصور، وكل كلمة في مكانها بخطها ولونها
+  paintNode(root) {
+    const SC = 2, R = root.getBoundingClientRect();
+    const W = Math.ceil(R.width), H = Math.ceil(Math.max(R.height, root.scrollHeight || 0));
+    if (!W || !H) return null;
+    const cv = document.createElement('canvas');
+    cv.width = W * SC; cv.height = H * SC;
+    const ctx = cv.getContext('2d');
+    ctx.scale(SC, SC);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    const ox = R.left, oy = R.top;
+    const clear = c => !c || c === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(c);
+    const box = (x, y, w, h, r) => {
+      r = Math.max(0, Math.min(r || 0, w / 2, h / 2));
+      ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    };
+    const arabic = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
+    const walk = (el, alpha) => {
+      const cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      if (cs.transform && cs.transform !== 'none') return;   // العلامة المايلة (عرض سعر) ما بتترسم
+      const op = cs.opacity === '' ? 1 : Number(cs.opacity);
+      const a = alpha * (isNaN(op) ? 1 : op);
+      if (a <= 0.01) return;
+      const r = el.getBoundingClientRect();
+      const x = r.left - ox, y = r.top - oy, w = r.width, h = r.height;
+      ctx.globalAlpha = a;
+      if (w > 0 && h > 0) {
+        const rad = parseFloat(cs.borderTopLeftRadius) || 0;
+        const bgi = cs.backgroundImage || '';
+        if (bgi.indexOf('gradient') >= 0) {
+          const cols = bgi.match(/rgba?\([^)]*\)|#[0-9a-fA-F]{3,8}/g) || [];
+          if (cols.length) {
+            const g = /to bottom|180deg/.test(bgi) ? ctx.createLinearGradient(x, y, x, y + h) : ctx.createLinearGradient(x + w, y, x, y);
+            cols.forEach((c, i) => g.addColorStop(cols.length === 1 ? 0 : i / (cols.length - 1), c));
+            ctx.fillStyle = g; box(x, y, w, h, rad); ctx.fill();
+          }
+        } else if (!clear(cs.backgroundColor)) { ctx.fillStyle = cs.backgroundColor; box(x, y, w, h, rad); ctx.fill(); }
+        [['Top', x, y, w, 0], ['Bottom', x, y + h, w, 0], ['Right', x + w, y, 0, h], ['Left', x, y, 0, h]].forEach(([side, sx, sy, sw, sh]) => {
+          const bw = parseFloat(cs['border' + side + 'Width']) || 0, st = cs['border' + side + 'Style'], bc = cs['border' + side + 'Color'];
+          if (!bw || st === 'none' || st === 'hidden' || clear(bc)) return;
+          ctx.save(); ctx.strokeStyle = bc; ctx.lineWidth = bw;
+          ctx.setLineDash(st === 'dashed' ? [bw * 3, bw * 2] : st === 'dotted' ? [bw, bw * 1.5] : []);
+          ctx.beginPath();
+          if (sh === 0) { const yy = side === 'Top' ? sy + bw / 2 : sy - bw / 2; ctx.moveTo(sx, yy); ctx.lineTo(sx + sw, yy); }
+          else { const xx = side === 'Left' ? sx + bw / 2 : sx - bw / 2; ctx.moveTo(xx, sy); ctx.lineTo(xx, sy + sh); }
+          ctx.stroke(); ctx.restore();
+        });
+      }
+      if (el.tagName === 'IMG') { if (el.complete && el.naturalWidth) { try { ctx.drawImage(el, x, y, w, h); } catch (e) {} } return; }
+      el.childNodes.forEach(nd => {
+        if (nd.nodeType === 1) { walk(nd, a); return; }
+        if (nd.nodeType !== 3 || !nd.data.trim()) return;
+        ctx.globalAlpha = a;
+        ctx.fillStyle = cs.color;
+        ctx.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        try { ctx.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing; } catch (e) {}
+        const rg = document.createRange(), re = /\S+/g;
+        let m;
+        while ((m = re.exec(nd.data))) {
+          rg.setStart(nd, m.index); rg.setEnd(nd, m.index + m[0].length);
+          const rs = rg.getClientRects();
+          if (!rs.length) continue;
+          const fs0 = parseFloat(cs.fontSize) || 12;
+          if (rs.length > 1) {
+            // كلمة اتقسمت لأكتر من جزء (تواريخ بعلامات اتجاه، وقت، سطر مكسور): كل حرف في مكانو
+            for (let ci = 0; ci < m[0].length; ci++) {
+              const chr = m[0][ci];
+              if (/[​-‏‪-‮⁦-⁩]/.test(chr)) continue;
+              rg.setStart(nd, m.index + ci); rg.setEnd(nd, m.index + ci + 1);
+              const cr = rg.getClientRects()[0];
+              if (!cr || !cr.width) continue;
+              ctx.direction = 'ltr'; ctx.textAlign = 'center';
+              const mc = ctx.measureText(chr);
+              const ca = mc.fontBoundingBoxAscent || fs0 * 0.8, cd = mc.fontBoundingBoxDescent || fs0 * 0.25;
+              ctx.fillText(chr, cr.left + cr.width / 2 - ox, cr.top - oy + (cr.height - (ca + cd)) / 2 + ca);
+            }
+            continue;
+          }
+          const b = rs[0], word = m[0];
+          const rtl = arabic.test(word) || (cs.direction === 'rtl' && !/[A-Za-z0-9]/.test(word));
+          ctx.direction = rtl ? 'rtl' : 'ltr';
+          ctx.textAlign = rtl ? 'right' : 'left';
+          const mt = ctx.measureText(word);
+          const fs = parseFloat(cs.fontSize) || 12;
+          const asc = mt.fontBoundingBoxAscent || fs * 0.8, desc = mt.fontBoundingBoxDescent || fs * 0.25;
+          ctx.fillText(word, (rtl ? b.right : b.left) - ox, b.top - oy + (b.height - (asc + desc)) / 2 + asc);
+        }
+      });
+    };
+    walk(root, 1);
+    ctx.globalAlpha = 1;
+    return cv;
   }
   downloadBlob(blob, name) {
     const a = document.createElement('a');
