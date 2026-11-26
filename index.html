@@ -5433,7 +5433,7 @@
 
               <sc-if value="{{ cl.signedOut }}" hint-placeholder-val="{{ true }}">
                 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-                  <input value="{{ cl.login }}" sc-camel-on-input="{{ cl.onLogin }}" placeholder="اسم الدخول" autocomplete="username" dir="ltr" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
+                  <input value="{{ cl.login }}" sc-camel-on-input="{{ cl.onLogin }}" placeholder="اسمك" autocomplete="username" dir="auto" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
                   <input type="password" value="{{ cl.pass }}" sc-camel-on-input="{{ cl.onPass }}" sc-camel-on-key-down="{{ cl.onPassKey }}" placeholder="كلمة السر" autocomplete="current-password" dir="ltr" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
                   <button sc-camel-on-click="{{ cl.signIn }}" style="{{ cl.btnMain }}">دخول</button>
                 </div>
@@ -5480,7 +5480,7 @@
                     <div style="background:#fffdf7;border:1px solid #f0dcb4;border-radius:10px;padding:12px;margin-bottom:10px">
                       <div style="font-weight:700;font-size:13px;margin-bottom:8px">{{ cl.formTitle }}</div>
                       <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <sc-if value="{{ cl.formIsCreate }}" hint-placeholder-val="{{ true }}"><input value="{{ cl.fLogin }}" sc-camel-on-input="{{ cl.onFLogin }}" placeholder="اسم الدخول (مثلاً ahmed)" autocomplete="off" dir="ltr" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none"></sc-if>
+                        <sc-if value="{{ cl.formIsCreate }}" hint-placeholder-val="{{ true }}"><input value="{{ cl.fLogin }}" sc-camel-on-input="{{ cl.onFLogin }}" placeholder="الاسم اللي بيدخل بيهو (مثلاً أحمد الخرطوم)" autocomplete="off" dir="auto" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none"></sc-if>
                         <input type="password" value="{{ cl.fPass }}" sc-camel-on-input="{{ cl.onFPass }}" placeholder="كلمة السر (٨ حروف أو أكتر)" autocomplete="new-password" dir="ltr" style="flex:1;min-width:140px;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none">
                         <button sc-camel-on-click="{{ cl.submitForm }}" style="{{ cl.btnMain }}">حفظ</button>
                         <button sc-camel-on-click="{{ cl.closeForm }}" style="{{ cl.btnLine }}">إلغاء</button>
@@ -6806,7 +6806,7 @@
         </div>
         <sc-if value="{{ gateErr }}" hint-placeholder-val="{{ false }}"><div style="background:#fbecea;border:1px solid #f3c9c4;color:#c0392b;border-radius:9px;padding:9px 12px;font-size:12.5px;margin-bottom:10px">{{ gateErr }}</div></sc-if>
         <sc-if value="{{ gateLogin }}" hint-placeholder-val="{{ true }}">
-          <input value="{{ gateUser }}" sc-camel-on-input="{{ onGateUser }}" placeholder="اسم الدخول" autocomplete="username" dir="ltr" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cfd8e6;border-radius:9px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px">
+          <input value="{{ gateUser }}" sc-camel-on-input="{{ onGateUser }}" placeholder="اسمك" autocomplete="username" dir="auto" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cfd8e6;border-radius:9px;font-size:14px;font-family:inherit;outline:none;margin-bottom:10px">
           <input type="password" value="{{ gatePass }}" sc-camel-on-input="{{ onGatePass }}" sc-camel-on-key-down="{{ onGateKey }}" placeholder="كلمة السر" autocomplete="current-password" dir="ltr" style="width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #cfd8e6;border-radius:9px;font-size:14px;font-family:inherit;outline:none;margin-bottom:12px">
           <button sc-camel-on-click="{{ gateSignIn }}" style="width:100%;padding:12px;border:none;border-radius:10px;background:#152a4a;color:#fff;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer">{{ gateBtn }}</button>
         </sc-if>
@@ -26935,16 +26935,46 @@ class Component extends DCLogic {
     }
     return { data, res: r };
   };
+  // اسم الدخول: إيميل كامل (حساب المدير الأول) أو اسم إنجليزي بسيط (ahmed) زي ما هم —
+  // أي اسم تاني (أحمد الخرطوم) بيتحوّل لرمز ثابت. «أحمد» و«احمد» و«ة/ه» واحد، والمسافات الزايدة ما بتفرق.
+  // ⚠ الرمز ده هو اسم الحساب في القاعدة: أي تغيير فيهو بيقفل حسابات الموظفين — ما يتغيّر أبداً.
+  cloudNameKey(s) {
+    return String(s || '').trim().toLowerCase()
+      .replace(/[ً-ْٰـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+      .replace(/ؤ/g, 'و').replace(/ئ/g, 'ي').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/\s+/g, ' ');
+  }
+  cloudLoginId(raw) {
+    const s = String(raw || '').trim();
+    if (!s) return '';
+    const l = s.toLowerCase();
+    if (l.indexOf('@') >= 0 || /^[a-z0-9][a-z0-9._-]{2,31}$/.test(l)) return l;
+    const key = 'L1:' + this.cloudNameKey(s);
+    const h = (seed) => {
+      let a = 0xdeadbeef ^ seed, b = 0x41c6ce57 ^ seed;
+      for (let i = 0; i < key.length; i++) { const c = key.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); }
+      a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+      b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+      return (b >>> 0).toString(16).padStart(8, '0') + (a >>> 0).toString(16).padStart(8, '0');
+    };
+    return 'n' + h(1) + h(7).slice(0, 8);
+  }
   cloudLoginEmail(login) {
-    const l = String(login || '').trim().toLowerCase();
-    return l.indexOf('@') >= 0 ? l : (l + '@' + Component.CLOUD_DOMAIN);
+    const id = this.cloudLoginId(login);
+    return id.indexOf('@') >= 0 ? id : (id + '@' + Component.CLOUD_DOMAIN);
+  }
+  // اللي بيظهر للمدير: الاسم اللي الموظف بيدخل بيهو (الرمز نفسو ما بيتعرض)
+  cloudLoginShow(cu) {
+    const l = String((cu && cu['login']) || '');
+    if (!/^n[0-9a-f]{24}$/.test(l)) return l;
+    const u = this.userById(cu.app_user_id);
+    return (u && u.loginName) || (cu.name || u && u.name || '—');
   }
 
   // ---------- الدخول ----------
   cloudSignIn = async () => {
     const u = this.state.cloudUi || {};
     const login = String(u.login || '').trim(), pass = String(u.pass || '');
-    if (!login || !pass) return this.cloudUi({ err: 'اكتب اسم الدخول وكلمة السر' });
+    if (!login || !pass) return this.cloudUi({ err: 'اكتب اسمك وكلمة السر' });
     this.cloudUi({ busy: 'signin', err: '', msg: '' });
     try {
       const c = this.cloudCfg();
@@ -26954,7 +26984,7 @@ class Component extends DCLogic {
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.access_token) {
         const m = String(j.error_description || j.msg || j.message || j.error || ('HTTP ' + r.status));
-        throw new Error(/invalid|credentials/i.test(m) ? 'اسم الدخول أو كلمة السر غلط' : /banned/i.test(m) ? 'الحساب ده موقوف' : m);
+        throw new Error(/invalid|credentials/i.test(m) ? 'الاسم أو كلمة السر غلط' : /banned/i.test(m) ? 'الحساب ده موقوف' : m);
       }
       this.cloudSaveSess(this.cloudSessOf(j));
       this.cloudUi({ pass: '', busy: '', users: null, up: null, check: null });
@@ -27020,7 +27050,7 @@ class Component extends DCLogic {
     return { name: u.name || 'مستخدم', role: u.role === 'manager' ? 'manager' : 'cashier', all_branches: all,
       branches: all ? [] : (u.branches || []).filter(b => this.branchById(b)), perms: this.permsOf(u), app_user_id: u.id };
   }
-  cloudOpenForm = (u, mode) => () => this.cloudUi({ formFor: u.id, formMode: mode, fLogin: '', fPass: '', err: '', msg: '' });
+  cloudOpenForm = (u, mode) => () => this.cloudUi({ formFor: u.id, formMode: mode, fLogin: mode === 'pass' ? '' : (u.name || ''), fPass: '', err: '', msg: '' });
   cloudCloseForm = () => this.cloudUi({ formFor: '', fPass: '', fLogin: '' });
   cloudSubmitForm = async () => {
     const ui = this.state.cloudUi || {};
@@ -27034,13 +27064,15 @@ class Component extends DCLogic {
       this.cloudUi({ busy: 'form', err: '' });
       try {
         await this.cloudFn({ action: 'password', user_id: cu.user_id, password: pass });
-        this.cloudUi({ busy: '', formFor: '', fPass: '', msg: 'اتغيّرت كلمة سر «' + cu.login + '»' });
-        this.audit('قاعدة البيانات المركزية', 'تغيير كلمة سر حساب ' + cu.login);
+        this.cloudUi({ busy: '', formFor: '', fPass: '', msg: 'اتغيّرت كلمة سر «' + this.cloudLoginShow(cu) + '»' });
+        this.audit('قاعدة البيانات المركزية', 'تغيير كلمة سر حساب ' + this.cloudLoginShow(cu));
       } catch (e) { this.cloudUi({ busy: '', err: this.cloudErr(e), fPass: '' }); }
       return;
     }
-    const login = String(ui.fLogin || '').trim().toLowerCase();
-    if (!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(login)) return this.cloudUi({ err: 'اسم الدخول: ٣ حروف إنجليزي صغيرة أو أرقام على الأقل، من غير مسافات (مثلاً ahmed أو atbara.1)' });
+    const loginName = String(ui.fLogin || '').trim().replace(/\s+/g, ' ');
+    if (!loginName) return this.cloudUi({ err: 'اكتب الاسم اللي الموظف حيدخل بيهو' });
+    if (loginName.indexOf('@') >= 0) return this.cloudUi({ err: 'الاسم من غير @' });
+    const login = this.cloudLoginId(loginName);
     if (!(ui.up && ui.up.finished) && !(ui.users || []).length) {
       // الفروع لازم تكون في القاعدة قبل ما نربط موظف بيها
       if (!confirm('لو الفروع لسه ما اترفعت للقاعدة، الحساب حيترفض. اترفعت؟')) return;
@@ -27048,10 +27080,14 @@ class Component extends DCLogic {
     this.cloudUi({ busy: 'form', err: '' });
     try {
       await this.cloudFn({ action: 'create', login, password: pass, ...this.cloudUserPayload(u) });
-      this.cloudUi({ busy: '', formFor: '', fPass: '', fLogin: '', msg: 'اتعمل حساب «' + login + '» لـ' + u.name });
-      this.audit('قاعدة البيانات المركزية', 'إنشاء حساب ' + login + ' للمستخدم ' + u.name);
+      this.setState(s => ({ settings: { ...s.settings, users: (s.settings.users || []).map(x => x.id === u.id ? { ...x, loginName } : x) } }), this.persistSettings);
+      this.cloudUi({ busy: '', formFor: '', fPass: '', fLogin: '', msg: 'اتعمل حساب لـ' + u.name + ' — بيدخل باسم «' + loginName + '» وكلمة السر اللي كتبتها' });
+      this.audit('قاعدة البيانات المركزية', 'إنشاء حساب للمستخدم ' + u.name + ' — اسم الدخول «' + loginName + '»');
       this.cloudLoadUsers();
-    } catch (e) { this.cloudUi({ busy: '', err: this.cloudErr(e), fPass: '' }); }
+    } catch (e) {
+      const m = this.cloudErr(e);
+      this.cloudUi({ busy: '', fPass: '', err: /already|registered|exists/i.test(m) ? 'في حساب تاني بنفس الاسم ده — اكتب اسم مختلف (مثلاً «أحمد الخرطوم»)' : m });
+    }
   };
   cloudSyncUser = (u, cu) => async () => {
     this.cloudUi({ busy: 'sync', err: '' });
@@ -27059,18 +27095,18 @@ class Component extends DCLogic {
       const p = this.cloudUserPayload(u);
       await this.cloudFn({ action: 'update', user_id: cu.user_id, name: p.name, role: p.role, all_branches: p.all_branches,
         branches: p.branches, perms: p.perms });
-      this.cloudUi({ busy: '', msg: 'اتحدّثت صلاحيات «' + cu.login + '» من النظام' });
-      this.audit('قاعدة البيانات المركزية', 'تحديث صلاحيات حساب ' + cu.login);
+      this.cloudUi({ busy: '', msg: 'اتحدّثت صلاحيات «' + this.cloudLoginShow(cu) + '» من النظام' });
+      this.audit('قاعدة البيانات المركزية', 'تحديث صلاحيات حساب ' + this.cloudLoginShow(cu));
       this.cloudLoadUsers();
     } catch (e) { this.cloudUi({ busy: '', err: this.cloudErr(e) }); }
   };
   cloudToggleActive = (cu) => async () => {
-    if (cu.active && !confirm('إيقاف حساب «' + cu.login + '»؟ ما حيقدر يسجّل دخول للقاعدة لحدي ما ترجّعو.')) return;
+    if (cu.active && !confirm('إيقاف حساب «' + this.cloudLoginShow(cu) + '»؟ ما حيقدر يسجّل دخول للقاعدة لحدي ما ترجّعو.')) return;
     this.cloudUi({ busy: 'sync', err: '' });
     try {
       await this.cloudFn({ action: 'update', user_id: cu.user_id, active: !cu.active });
-      this.cloudUi({ busy: '', msg: (cu.active ? 'اتوقف' : 'اترجّع') + ' حساب «' + cu.login + '»' });
-      this.audit('قاعدة البيانات المركزية', (cu.active ? 'إيقاف' : 'تشغيل') + ' حساب ' + cu.login);
+      this.cloudUi({ busy: '', msg: (cu.active ? 'اتوقف' : 'اترجّع') + ' حساب «' + this.cloudLoginShow(cu) + '»' });
+      this.audit('قاعدة البيانات المركزية', (cu.active ? 'إيقاف' : 'تشغيل') + ' حساب ' + this.cloudLoginShow(cu));
       this.cloudLoadUsers();
     } catch (e) { this.cloudUi({ busy: '', err: this.cloudErr(e) }); }
   };
@@ -27328,7 +27364,7 @@ class Component extends DCLogic {
       const all = !!u.allBranches || (u.role === 'manager' && u.allBranches !== false);
       return { name: u.name || '—', role: u.role === 'manager' ? 'مدير' : 'كاشير',
         branches: all ? 'كل الفروع' : ((u.branches || []).map(b => this.branchName(b)).join('، ') || '—'),
-        status: cu ? (cu.active ? '✔ ' + cu.login : '⏸ موقوف — ' + cu.login) : (v.usersLoaded ? 'ما عندو حساب' : '…'),
+        status: cu ? (cu.active ? '✔ ' + this.cloudLoginShow(cu) : '⏸ موقوف — ' + this.cloudLoginShow(cu)) : (v.usersLoaded ? 'ما عندو حساب' : '…'),
         statusColor: cu ? (cu.active ? '#1f8a5b' : '#b9822a') : '#7d8aa0',
         hasAcc: !!cu, noAcc: !cu && v.usersLoaded, isMe: !!(cu && sess && sess.user && cu.user_id === sess.user.id),
         create: this.cloudOpenForm(u, 'create'), reset: this.cloudOpenForm(u, 'pass'),
@@ -27342,7 +27378,7 @@ class Component extends DCLogic {
     v.fLogin = ui.fLogin || ''; v.onFLogin = e => this.cloudUi({ fLogin: e.target.value });
     v.fPass = ui.fPass || ''; v.onFPass = e => this.cloudUi({ fPass: e.target.value });
     v.submitForm = this.cloudSubmitForm; v.closeForm = this.cloudCloseForm;
-    v.formHint = v.formIsCreate ? 'اسم الدخول إنجليزي صغير من غير مسافات (مثلاً ahmed). كلمة السر ٨ حروف على الأقل — إنت بتديها للموظف، والنظام ما بيحفظها.'
+    v.formHint = v.formIsCreate ? 'الموظف بيدخل بالاسم ده (عربي أو إنجليزي) وكلمة السر — من أي جهاز. كلمة السر ٨ حروف أو أرقام على الأقل، إنت بتديها ليهو والنظام ما بيحفظها.'
       : 'كلمة السر القديمة بتبطل فوراً.';
     // الرفع
     v.canUpload = !!(me && me.role === 'manager' && me.all_branches) && this.syncState().mode !== 'join';
