@@ -1156,6 +1156,21 @@
 
       <!-- INVOICES — كل الفواتير: أرقام اليوم + مراجعة + تفاصيل -->
       <sc-if value="{{ isInvoices }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ retsHas }}" hint-placeholder-val="{{ false }}">
+          <details style="background:#fff;border:1px solid #f0dcb4;border-radius:14px;padding:12px 16px;margin-bottom:14px">
+            <summary style="cursor:pointer;font-weight:700;font-size:14px;color:#8a6a1e;list-style:none">↩ المرتجعات ({{ retsCount }}) — قيمتها {{ retsTotal }} <span style="font-size:11.5px;font-weight:400;color:#9aa6ba">— اضغط عشان تشوفها</span></summary>
+            <div style="overflow-x:auto;margin-top:10px">
+              <sc-raw-table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px">
+                <sc-raw-thead><sc-raw-tr style="color:#7d8aa0;text-align:right"><sc-raw-th style="padding:6px">المرتجع</sc-raw-th><sc-raw-th style="padding:6px">التاريخ</sc-raw-th><sc-raw-th style="padding:6px">الفاتورة</sc-raw-th><sc-raw-th style="padding:6px">العميل</sc-raw-th><sc-raw-th style="padding:6px">الأصناف</sc-raw-th><sc-raw-th style="padding:6px">القيمة</sc-raw-th><sc-raw-th style="padding:6px">رجع للعميل</sc-raw-th><sc-raw-th style="padding:6px"></sc-raw-th></sc-raw-tr></sc-raw-thead>
+                <sc-raw-tbody>
+                  <sc-for list="{{ retsList }}" as="r" hint-placeholder-count="2">
+                    <sc-raw-tr style="border-top:1px solid #f1f4f8"><sc-raw-td style="padding:6px;font-weight:700">{{ r.no }}</sc-raw-td><sc-raw-td style="padding:6px;white-space:nowrap">{{ r.when }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.inv }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.customer }}</sc-raw-td><sc-raw-td style="padding:6px">{{ r.items }}</sc-raw-td><sc-raw-td style="padding:6px;font-weight:700;white-space:nowrap">{{ r.value }}</sc-raw-td><sc-raw-td style="padding:6px;white-space:nowrap">{{ r.refund }}</sc-raw-td><sc-raw-td style="padding:6px"><button sc-camel-on-click="{{ r.open }}" style="border:1px solid #dbe2ec;background:#fff;border-radius:7px;padding:4px 9px;font-family:inherit;font-size:11.5px;cursor:pointer">👁 الفاتورة</button></sc-raw-td></sc-raw-tr>
+                  </sc-for>
+                </sc-raw-tbody>
+              </sc-raw-table>
+            </div>
+          </details>
+        </sc-if>
 
         <!-- شريط اليوم: الأرقام اللي صاحب المحل بيقفل بيها يومه -->
         <div style="background:linear-gradient(160deg,#152a4a,#1d3a63);border-radius:16px;padding:18px 20px;margin-bottom:16px;color:#eaf0fa">
@@ -5994,6 +6009,7 @@
             <sc-if value="{{ invCanSettle }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ openInvSettle }}" title="تسجيل سداد المتبقي — كاش أو تحويل مع رقم العملية" style="padding:10px 16px;border:none;border-radius:9px;background:#1f8a5b;color:#fff;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer" style-hover="background:#18734a">✓ تسجيل السداد</button></sc-if>
             <!-- قيّم العميل بعد ما البيعة تخلص — بيظهر بس لو العميل ليه اسم أو رقم -->
             <sc-if value="{{ invCanRate }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ invRateCust }}" title="{{ invRateTitle }}" style="padding:10px 15px;border:1px solid #e6d3a3;border-radius:9px;background:#fffdf7;color:#b9822a;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer" style-hover="border-color:#c8a24a">★ {{ invRateLabel }}</button></sc-if>
+            <sc-if value="{{ invCanReturn }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ openReturn }}" title="العميل رجّع صنف أو أكتر" style="padding:10px 15px;border:1px solid #cfd8e6;border-radius:9px;background:#fff;color:#1d3a63;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer">↩ مرتجع</button></sc-if>
             <sc-if value="{{ canRevert }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ revertInvoice }}" title="صلاحيات المدير — يُسجَّل في سجل النشاط" style="padding:10px 15px;border:1px solid #e6d3a3;border-radius:9px;background:#fffaf0;color:#b9822a;font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer">↩ إرجاع إلى عرض سعر (مدير)</button></sc-if>
             <sc-if value="{{ canDeleteDoc }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ deleteActiveInvoice }}" style="padding:10px 15px;border:1px solid #e6b4ad;border-radius:9px;background:#fff;color:#c0392b;font-family:inherit;font-weight:600;font-size:12.5px;cursor:pointer">🗑 حذف</button></sc-if>
           </div>
@@ -6161,6 +6177,18 @@
             </sc-if>
           </div>
 
+          <!-- ↩ المرتجعات من الفاتورة دي -->
+          <sc-if value="{{ invHasRets }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:12px;border:1px solid #f0dcb4;background:#fffaf0;border-radius:9px;padding:10px 13px">
+              <div style="font-weight:700;font-size:12.5px;color:#8a6a1e;margin-bottom:6px">↩ المرتجعات</div>
+              <sc-for list="{{ invRets }}" as="r" hint-placeholder-count="1">
+                <div style="font-size:12px;color:#3a4a63;line-height:1.8;padding:4px 0;border-top:1px dashed #ecdcb4">
+                  <b>{{ r.no }}</b> — {{ r.when }} — {{ r.items }} — <b>{{ r.value }}</b><sc-if value="{{ r.how }}" hint-placeholder-val="{{ true }}"> <span style="color:#7d8aa0">({{ r.how }})</span></sc-if>
+                  <sc-if value="{{ r.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:#8592a6">السبب: {{ r.note }}</div></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
           <!-- سجل السداد: في «نسختي» بس — نسخة العميل وأي حاجة بتتبعت ليهو ما فيها السجل ده -->
           <sc-if value="{{ invHasPays }}" hint-placeholder-val="{{ false }}">
             <div data-print="shop" style="margin-top:12px;border:1px solid #cfe3d5;background:#f6fbf8;border-radius:8px;padding:9px 12px;break-inside:avoid;page-break-inside:avoid">
@@ -8691,6 +8719,52 @@
               <div style="color:{{ invAccent }};font-weight:600">{{ invBranchLine }}</div>
             </div>
           </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ↩ RETURN MODAL — مرتجع -->
+  <sc-if value="{{ retOn }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(15,32,56,.6);z-index:129;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px" sc-camel-on-click="{{ closeReturn }}">
+      <div sc-camel-on-click="{{ stop }}" style="max-width:560px;width:100%;background:#fff;border-radius:16px;overflow:hidden;animation:posfade .2s ease">
+        <div style="background:#1d3a63;color:#fff;padding:15px 20px;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-weight:700;font-size:16px">{{ retTitle }}</div>
+            <div style="font-size:11.5px;color:#cfdcf0;margin-top:2px">{{ retCustomer }}</div>
+          </div>
+          <button sc-camel-on-click="{{ closeReturn }}" style="background:rgba(255,255,255,.16);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-family:inherit">×</button>
+        </div>
+        <div style="padding:16px 20px">
+          <div style="font-size:12px;color:#7d8aa0;margin-bottom:8px">اكتب كم قطعة رجعت من كل صنف:</div>
+          <sc-for list="{{ retRows }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #eef2f7">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;color:#152a4a">{{ r.ar }}</div>
+                <div style="font-size:11px;color:#8592a6;font-family:'IBM Plex Sans',sans-serif">{{ r.pn }} • اتباع {{ r.sold }} • {{ r.price }}</div>
+              </div>
+              <input value="{{ r.qty }}" sc-camel-on-input="{{ r.onQty }}" inputmode="numeric" placeholder="0" style="width:64px;padding:8px;border:1px solid #cfd8e6;border-radius:8px;font-size:15px;font-weight:700;text-align:center;font-family:'IBM Plex Sans',sans-serif;outline:none">
+              <button sc-camel-on-click="{{ r.all }}" style="padding:7px 10px;border:1px solid #dbe2ec;background:#fff;border-radius:8px;font-family:inherit;font-size:11.5px;color:#1d3a63;cursor:pointer;white-space:nowrap">الكل</button>
+            </div>
+          </sc-for>
+          <button sc-camel-on-click="{{ toggleRetRestock }}" style="width:100%;margin:12px 0 10px;padding:10px;border:1px solid #dbe2ec;background:#f8fafc;border-radius:9px;font-family:inherit;font-size:12.5px;color:#1d3a63;cursor:pointer;text-align:right">{{ retRestockText }}</button>
+          <sc-if value="{{ retHasRefund }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11.5px;color:#7d8aa0;margin-bottom:6px">الفلوس بترجع للعميل:</div>
+            <div style="display:flex;gap:9px;margin-bottom:10px">
+              <button sc-camel-on-click="{{ retCash }}" style="{{ retCashStyle }}">💵 كاش</button>
+              <button sc-camel-on-click="{{ retBank }}" style="{{ retBankStyle }}">⇄ تحويل</button>
+            </div>
+          </sc-if>
+          <input value="{{ retNote }}" sc-camel-on-input="{{ onRetNote }}" placeholder="السبب (اختياري) — مثلاً: ما ركب، مقاس غلط" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid #cfd8e6;border-radius:8px;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px">
+          <div style="background:#f7f9fc;border:1px solid #e6ebf3;border-radius:10px;padding:10px 13px;font-size:12.5px;color:#3a4a63;line-height:1.9;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between"><span>قيمة المرتجع</span><b style="font-family:'IBM Plex Sans',sans-serif">{{ retValue }}</b></div>
+            <sc-if value="{{ retHasDebt }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;color:#8a6a1e"><span>بينقص من دين العميل</span><b style="font-family:'IBM Plex Sans',sans-serif">{{ retDebt }}</b></div></sc-if>
+            <sc-if value="{{ retHasRefund }}" hint-placeholder-val="{{ false }}"><div style="display:flex;justify-content:space-between;color:#c0392b"><span>بيرجع للعميل (من درج اليوم)</span><b style="font-family:'IBM Plex Sans',sans-serif">{{ retRefund }}</b></div></sc-if>
+          </div>
+          <div style="display:flex;gap:9px">
+            <button sc-camel-on-click="{{ confirmReturn }}" style="flex:1;padding:12px;border:none;border-radius:10px;background:#1d3a63;color:#fff;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer">↩ سجّل المرتجع</button>
+            <button sc-camel-on-click="{{ closeReturn }}" style="padding:12px 16px;border:1px solid #cfd8e6;border-radius:10px;background:#fff;color:#1d3a63;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer">إلغاء</button>
+          </div>
         </div>
       </div>
     </div>
@@ -16824,6 +16898,86 @@ class Component extends DCLogic {
     return { settle: { ...s.settle, amount: String(Math.max(0, this.settleRemOf(s.settle) - d)) } };
   });
 
+  // ======================== ↩ المرتجعات ========================
+  invReturns(v) { return v && Array.isArray(v.returns) ? v.returns : []; }
+  allReturns(scope) {
+    const out = [];
+    this.finals(scope).forEach(v => this.invReturns(v).forEach(r => out.push({ ...r, invId: v.id, invNo: v.no, customer: v.customer, phone: v.phone, branchId: v.branchId })));
+    return out.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  }
+  openReturn = () => {
+    const inv = this.state.activeInvoice;
+    if (!inv || inv.status === 'quote') return;
+    if (!this.can('editInvoice')) return this.toast('المرتجع محتاج صلاحية «تعديل الفواتير»', 'err');
+    if (!(inv.rows || []).length) return this.toast('الفاتورة دي ما فيها أصناف', 'err');
+    this.setState({ retForm: { invId: inv.id, qty: {}, restock: true, method: 'كاش', note: '' } });
+  };
+  closeReturn = () => this.setState({ retForm: null });
+  setRetQty = (i) => (e) => { const v = String(e.target.value).replace(/[^0-9]/g, ''); this.setState(s => (s.retForm ? { retForm: { ...s.retForm, qty: { ...s.retForm.qty, [i]: v } } } : null)); };
+  retAllOf = (i) => () => this.setState(s => {
+    if (!s.retForm) return null;
+    const inv = s.invoices.find(v => v.id === s.retForm.invId), r = inv && (inv.rows || [])[i];
+    return r ? { retForm: { ...s.retForm, qty: { ...s.retForm.qty, [i]: String(this.qnum(r.qty)) } } } : null;
+  });
+  setRetNote = (e) => { const v = e.target.value; this.setState(s => (s.retForm ? { retForm: { ...s.retForm, note: v } } : null)); };
+  toggleRetRestock = () => this.setState(s => (s.retForm ? { retForm: { ...s.retForm, restock: !s.retForm.restock } } : null));
+  setRetMethod = (m) => () => this.setState(s => (s.retForm ? { retForm: { ...s.retForm, method: m } } : null));
+  // قيمة المرتجع = الفرق في إجمالي الفاتورة (الخصم والضريبة بيتوزّعوا بالنسبة على الباقي)
+  retCalc(inv, f) {
+    const rows = inv.rows || [], picked = [], newRows = [];
+    rows.forEach((r, i) => {
+      const max = this.qnum(r.qty), q = Math.min(max, this.qnum(((f && f.qty) || {})[i])), price = Number(r.price) || 0;
+      if (q > 0) picked.push({ pn: r.pn, ar: r.ar, en: r.en, qty: q, price, line: price * q });
+      if (max - q > 0) newRows.push({ ...r, qty: max - q, line: price * (max - q) });
+    });
+    const oldSub = rows.reduce((s, r) => s + this.rowLine(r), 0);
+    const sub = newRows.reduce((s, r) => s + this.rowLine(r), 0);
+    const oldDisc = Number(inv.discount) || 0, oldTax = Number(inv.tax) || 0;
+    const disc = oldSub > 0 ? Math.round(oldDisc * sub / oldSub) : 0;
+    const base0 = oldSub - oldDisc;
+    const tax = oldTax > 0 && base0 > 0 ? Math.round(oldTax * (sub - disc) / base0) : 0;
+    const total = sub - disc + tax;
+    const value = Math.max(0, (Number(inv.total) || 0) - total);
+    const debtCut = Math.min(Math.max(0, Number(inv.remaining) || 0), value);
+    return { picked, newRows, sub, disc, tax, total, value, debtCut, refund: value - debtCut };
+  }
+  confirmReturn = () => {
+    const S = this.state, f = S.retForm;
+    if (!f) return;
+    const inv = S.invoices.find(v => v.id === f.invId);
+    if (!inv) return this.setState({ retForm: null });
+    const c = this.retCalc(inv, f);
+    if (!c.picked.length) return this.toast('اكتب كم قطعة رجعت من الصنف', 'err');
+    const units = c.picked.reduce((s, r) => s + r.qty, 0);
+    if (!confirm('تسجيل مرتجع ' + units + ' قطعة من ' + this.invLabel(inv) + ' بقيمة ' + this.money(c.value) + '؟\n'
+      + (c.debtCut ? '• بينقص من دين العميل: ' + this.money(c.debtCut) + '\n' : '')
+      + (c.refund ? '• بيرجع للعميل ' + f.method + ': ' + this.money(c.refund) + ' (من درج اليوم)\n' : '')
+      + (f.restock ? '• القطع بترجع للمخزون' : '• القطع ما بترجع للمخزون'))) return;
+    const now = new Date();
+    const rec = { id: 'rt' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 5),
+      no: this.docNext(this.allReturns('all'), 'no', 0, inv.branchId),
+      ts: now.getTime(), date: now.toLocaleDateString('ar-EG'), time: now.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+      rows: c.picked, value: c.value, debtCut: c.debtCut, refund: c.refund, method: c.refund ? f.method : '',
+      restock: !!f.restock, note: String(f.note || '').trim(), user: this.currentUser(), device: this.deviceLabel() };
+    const paid = Math.max(0, (Number(inv.paid) || 0) - c.refund);
+    const upd = { ...inv, rows: c.newRows, subtotal: c.sub, discount: c.disc, tax: c.tax, total: c.total, paid,
+      remaining: Math.max(0, c.total - paid), returns: this.invReturns(inv).concat([rec]) };
+    const patch = { invoices: S.invoices.map(v => v.id === inv.id ? upd : v), retForm: null };
+    if (S.activeInvoice && S.activeInvoice.id === inv.id) patch.activeInvoice = upd;
+    if (f.restock) {
+      const bid = inv.branchId || S.branchId, stock = { ...(S.stock || {}) }, bs = { ...(stock[bid] || {}) };
+      c.picked.forEach(r => { if (r.pn) bs[r.pn] = (Number(bs[r.pn]) || 0) + r.qty; });
+      stock[bid] = bs;
+      patch.stock = stock;
+      patch.products = this.applyBranchStock(S.products, stock, S.branchId);
+    }
+    this.setState(patch, () => this.saveNow('invoices', 'stock', 'products'));
+    this.audit('مرتجع', 'مرتجع #' + rec.no + ' من ' + this.invLabel(inv) + ' — ' + (inv.customer || '') + ' — '
+      + c.picked.map(r => r.ar + ' ×' + r.qty).join('، ') + ' — ' + this.money(c.value)
+      + (c.debtCut ? ' (نقص الدين ' + this.money(c.debtCut) + ')' : '') + (c.refund ? ' — استرداد ' + f.method + ' ' + this.money(c.refund) : '')
+      + (f.restock ? '' : ' — ما رجع للمخزون') + (rec.note ? ' — ' + rec.note : ''));
+    this.toast('↩ اتسجّل مرتجع #' + rec.no + ' — ' + this.money(c.value));
+  };
   confirmSettle = () => {
     const f = this.state.settle;
     if (!f) return;
@@ -25907,7 +26061,8 @@ class Component extends DCLogic {
   // اللي دخل الدرج يوم البيع نفسه = المدفوع ناقص أي تحصيل اتسجّل بعد كدا
   invPaidAtSale(v) {
     const later = this.payList(v).reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    return Math.max(0, (Number(v.paid) || 0) - later);
+    const back = this.invReturns(v).reduce((s, r) => s + (Number(r.refund) || 0), 0);   // اللي رجع للعميل بعدين كان دخل يوم البيع
+    return Math.max(0, (Number(v.paid) || 0) + back - later);
   }
   invPayKind(v) {
     const p = (v && v.payment) || 'نقدي';
@@ -26009,6 +26164,12 @@ class Component extends DCLogic {
     const advRefund = advAll.reduce((s, a) => s
       + this.advRefundOn(a, day), 0);
     const advOpen = advAll.filter(a => this.advIsOpen(a)).reduce((s, a) => s + this.advHeld(a), 0);
+    // ↩ مرتجعات اليوم: قيمتها، والفلوس اللي رجعت للعملاء من درج اليوم
+    let retOut = 0, retValue = 0, retCount = 0;
+    allFin.forEach(v => this.invReturns(v).forEach(r => {
+      if (this.localIso(r.ts) !== day) return;
+      retOut += Number(r.refund) || 0; retValue += Number(r.value) || 0; retCount++;
+    }));
     const items = {};
     fin.forEach(v => (v.rows || []).forEach(r => {
       const k = r.pn || r.ar;
@@ -26021,7 +26182,8 @@ class Component extends DCLogic {
       sales, remaining, units, lines, atSale, settled, settledCount,
       advIn, advRefund, advOpen, advCount: advToday.length, fromAdv, fromOffset,
       advList: advToday,
-      cashIn: atSale + settled + advIn - advRefund,
+      retOut, retValue, retCount,
+      cashIn: atSale + settled + advIn - advRefund - retOut,
       avg: fin.length ? Math.round(sales / fin.length) : 0,
       pay, top: Object.keys(items).map(k => items[k]).sort((a, b) => b.qty - a.qty),
       profit: this.aiProfit(fin)
@@ -31978,6 +32140,13 @@ class Component extends DCLogic {
     const iScope = invCanScope ? (S.invScope || 'current') : 'current';
     const tSum = iScope === 'current' ? dayNow : this.daySummary(_todayStr, iScope);
     const showCost = this.can('editPrices');
+    out.retsAll = this.allReturns(this.state.invScope || 'current');
+    out.retsHas = out.retsAll.length > 0;
+    out.retsCount = out.retsAll.length;
+    out.retsTotal = this.money(out.retsAll.reduce((s, r) => s + (Number(r.value) || 0), 0));
+    out.retsList = out.retsAll.slice(0, 60).map(r => ({ no: '#' + r.no, when: r.date || '', inv: r.invNo != null ? '#' + r.invNo : '—', customer: r.customer || '—',
+        items: (r.rows || []).map(x => x.ar + ' ×' + x.qty).join('، '), value: this.money(r.value || 0),
+        refund: r.refund ? this.money(r.refund) + ' ' + (r.method || '') : (r.debtCut ? 'من الدين' : '—'), open: () => this.openInvoiceNo(r.invId) }));
     out.invTodayLabel = now.toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     out.invToday = {
       count: this.fmt(tSum.count),
@@ -31988,6 +32157,7 @@ class Component extends DCLogic {
         if (tSum.settledCount) bits.push(this.money(tSum.settled) + ' تحصيل ديون سابقة');
         if (tSum.advIn) bits.push(this.money(tSum.advIn) + ' دفعات مقدمة');
         if (tSum.advRefund) bits.push('− ' + this.money(tSum.advRefund) + ' مستردّة');
+        if (tSum.retOut) bits.push('− ' + this.money(tSum.retOut) + ' مرتجعات رجعت للعملاء');
         return bits.length ? ('منها ' + bits.join(' • ')) : 'كلها من فواتير اليوم';
       })(),
       adv: this.money(tSum.advIn),
@@ -32993,6 +33163,38 @@ class Component extends DCLogic {
     out.shareBusy = S.shareBusy;
     out.savePdf = this.savePdf;
     out.sendPdfToWhats = this.sendPdfToWhats;
+    // ↩ المرتجع: زر الفاتورة + النافذة + قسم «المرتجعات» في الفاتورة
+    {
+      const ai = S.activeInvoice;
+      out.invCanReturn = !!(ai && ai.status !== 'quote' && (ai.rows || []).length && this.can('editInvoice'));
+      out.openReturn = this.openReturn;
+      const rts = ai ? this.invReturns(ai) : [];
+      out.invHasRets = rts.length > 0;
+      out.invRets = rts.map(r => ({ no: 'مرتجع #' + r.no, when: (r.date || '') + (r.time ? ' ' + r.time : ''),
+        items: (r.rows || []).map(x => x.ar + ' ×' + x.qty).join('، '), value: this.money(r.value || 0),
+        how: [r.debtCut ? 'نقص من الدين ' + this.money(r.debtCut) : '', r.refund ? 'رجع ' + (r.method || 'كاش') + ' ' + this.money(r.refund) : '',
+          r.restock === false ? 'ما رجع للمخزون' : ''].filter(Boolean).join(' • '), note: r.note || '', hasNote: !!r.note }));
+      const f = S.retForm, rinv = f ? S.invoices.find(v => v.id === f.invId) : null;
+      out.retOn = !!(f && rinv);
+      if (out.retOn) {
+        const c = this.retCalc(rinv, f);
+        out.retTitle = '↩ مرتجع من ' + this.invLabel(rinv);
+        out.retCustomer = rinv.customer || 'عميل';
+        out.retRows = (rinv.rows || []).map((r, i) => ({ ar: r.ar, pn: r.pn || '', sold: this.qnum(r.qty), price: this.money(Number(r.price) || 0),
+          qty: (f.qty || {})[i] || '', onQty: this.setRetQty(i), all: this.retAllOf(i) }));
+        out.retValue = this.money(c.value);
+        out.retDebt = this.money(c.debtCut); out.retHasDebt = c.debtCut > 0;
+        out.retRefund = this.money(c.refund); out.retHasRefund = c.refund > 0;
+        out.retNone = c.value <= 0;
+        out.retRestock = !!f.restock; out.toggleRetRestock = this.toggleRetRestock;
+        out.retRestockText = f.restock ? '✔ القطع بترجع لمخزون الفرع' : '✖ القطع ما بترجع للمخزون (تالفة / ما صالحة للبيع)';
+        const mb = (on) => 'flex:1;padding:10px;border-radius:9px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;border:2px solid ' + (on ? '#1d3a63' : '#e2e8f1') + ';background:' + (on ? '#eef4fd' : '#fff') + ';color:' + (on ? '#1d3a63' : '#7d8aa0');
+        out.retCashStyle = mb(f.method !== 'تحويل'); out.retBankStyle = mb(f.method === 'تحويل');
+        out.retCash = this.setRetMethod('كاش'); out.retBank = this.setRetMethod('تحويل');
+        out.retNote = f.note || ''; out.onRetNote = this.setRetNote;
+        out.confirmReturn = this.confirmReturn; out.closeReturn = this.closeReturn;
+      }
+    }
     out.sharePdfNative = this.sharePdfNative;
     out.pdfBtnText = S.shareBusy ? '… جاري تجهيز الملف' : '📄 إرسال الفاتورة PDF للعميل';
     out.hasShareImg = !!S.shareImg && !S.shareBusy;
