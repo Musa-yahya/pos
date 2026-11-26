@@ -18374,9 +18374,10 @@ class Component extends DCLogic {
     return txt;
   }
   shareFileName(inv, ext) {
-    const label = inv.status === 'quote' ? ('عرض سعر ' + this.qLabel(inv)) : ('فاتورة ' + (inv.no || ''));
+    // «هاني A-1043» — اسم العميل ورقم الفاتورة بس (عرض السعر: «هاني عرض سعر Q-A-1010»)
+    const num = inv.status === 'quote' ? ('عرض سعر ' + this.qLabel(inv)) : String(inv.no || '');
     const cust = String(inv.customer || '').replace(/\s+/g, ' ').trim().slice(0, 40);
-    return [label, cust, this.invDay(inv)].filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]/g, '-') + '.' + ext;
+    return [cust, num].filter(Boolean).join(' ').replace(/[\\/:*?"<>|]/g, '-') + '.' + ext;
   }
   // رقم محلي (09xxxxxxxx) → رقم دولي بدون + كما يطلبه رابط wa.me
   waPhone(raw) {
