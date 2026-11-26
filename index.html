@@ -13689,7 +13689,7 @@ class Component extends DCLogic {
   addUser = () => {
     if (!this.can('manageUsers')) return this.toast('إضافة المستخدمين تتطلب صلاحية إدارة المستخدمين', 'err');
     const id = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    this.setState(s => ({ settings: { ...s.settings, users: [...(s.settings.users || []), { id, name: 'مستخدم جديد', pin: '', role: 'cashier', allBranches: false, branches: [], perms: this.defaultPerms('cashier') }] } }), this.persistSettingsNow);
+    this.setState(s => ({ settings: { ...s.settings, users: [...(s.settings.users || []), { id, name: 'مستخدم جديد', pin: '', role: 'cashier', allBranches: false, branches: [], perms: this.defaultPerms('cashier'), ...(Component.ONLINE_BUILD ? { site: true } : {}) }] } }), this.persistSettingsNow);
     this.audit('إضافة مستخدم', 'مستخدم جديد');
     this.toast('تمت إضافة مستخدم — عدّل اسمه وكلمة مروره');
   };
@@ -26997,7 +26997,21 @@ class Component extends DCLogic {
   cloudFn = async (payload) => (await this.cloudReq('/functions/v1/admin-users', { body: payload })).data || {};
   cloudLoadUsers = async () => {
     this.cloudUi({ busy: 'users', err: '' });
-    try { const d = await this.cloudFn({ action: 'list' }); this.cloudUi({ users: d.users || [], busy: '' }); }
+    try {
+      const d = await this.cloudFn({ action: 'list' }); this.cloudUi({ users: d.users || [], busy: '' });
+      if (Component.ONLINE_BUILD) this.setState(s => {
+        const map = {};
+        (s.settings.users || []).forEach(u => { map[u.id] = u; });
+        (d.users || []).forEach(cu => {
+          if (!cu || !cu.app_user_id) return;
+          const old = map[cu.app_user_id] || {}, role = cu.role === 'manager' ? 'manager' : 'cashier';
+          const perms = cu.perms && (cu.perms.actions || cu.perms.screens) ? cu.perms : (old.perms || this.defaultPerms(role));
+          map[cu.app_user_id] = { ...old, id: cu.app_user_id, name: cu.name || old.name || 'مستخدم', role, allBranches: !!cu.all_branches,
+            branches: Array.isArray(cu.branches) ? cu.branches : (old.branches || []), perms, pin: '', cloud: true, site: false };
+        });
+        return { settings: { ...s.settings, users: Object.keys(map).map(k => map[k]) } };
+      }, this.persistSettings);
+    }
     catch (e) { this.cloudUi({ busy: '', err: this.cloudErr(e) }); }
   };
   // نفس قاعدة النظام: المدير شايف كل الفروع إلا لو اتحدّد ليهو فروع
@@ -27863,7 +27877,7 @@ class Component extends DCLogic {
       allBranches: !!me.all_branches, branches: Array.isArray(me.branches) ? me.branches : ((old && old.branches) || []),
       pin: Component.ONLINE_BUILD ? '' : ((old && old.pin) || ''), cloud: true };
     if (me.perms && (me.perms.actions || me.perms.screens)) rec.perms = me.perms;
-    const next = Component.ONLINE_BUILD ? [rec] : (old ? users.map(u => u.id === id ? rec : u) : users.concat(rec));
+    const next = Component.ONLINE_BUILD ? [rec].concat(users.filter(u => u.id !== id && (u.cloud || u.site))) : (old ? users.map(u => u.id === id ? rec : u) : users.concat(rec));
     this.setState(s => ({ settings: { ...s.settings, users: next, ...(Component.ONLINE_BUILD ? { employee: rec.name } : {}) } }), () => {
       // فتح الصفحة تاني بنفس الحساب: الدور والصلاحيات بتتحدّث بس (من غير سطر «دخول» جديد في السجل)
       if (quiet && this.state.currentUserId === rec.id) { if (this.state.role !== rec.role) this.setState({ role: rec.role }, () => this.saveNow('role')); return; }
