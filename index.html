@@ -1205,6 +1205,7 @@
                   </div>
                 </sc-for>
                 <div style="font-size:11px;color:#8592a6;margin-top:6px;line-height:1.7">{{ x.no }} • {{ x.when }} • {{ x.meta }}</div>
+                <sc-if value="{{ x.hasSup }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ x.goSup }}" style="margin-top:4px;border:none;background:none;padding:0;font-family:inherit;font-size:11.5px;color:#1d3a63;cursor:pointer;text-decoration:underline">{{ x.supText }}</button></sc-if>
                 <sc-if value="{{ x.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#5a6a82;margin-top:2px">📝 {{ x.note }}</div></sc-if>
                 <sc-for list="{{ x.backs }}" as="b" hint-placeholder-count="0"><div style="font-size:11.5px;color:#1d6f42;margin-top:3px;line-height:1.6">{{ b.text }}</div></sc-for>
                 <sc-if value="{{ x.isClosed }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:#7a5c14;margin-top:3px;line-height:1.6">{{ x.closedText }}</div></sc-if>
@@ -4638,12 +4639,14 @@
                   <div style="font-size:11px;color:#5a6577;margin-top:4px">{{ s.stats }}</div>
                   <sc-if value="{{ s.hasOwed }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:#c0392b;font-weight:700;margin-top:2px">{{ s.owed }}</div></sc-if>
                   <sc-if value="{{ s.hasOwesUs }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;color:#1d6f42;font-weight:700;margin-top:2px">{{ s.owesUs }}</div></sc-if>
+                  <sc-if value="{{ s.hasSwap }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ s.swaps }}" title="اعرض البدل مع المحل ده" style="display:block;margin-top:2px;border:none;background:none;padding:0;font-family:inherit;font-size:11px;font-weight:700;color:{{ s.swapColor }};cursor:pointer;text-align:right">{{ s.swapText }}</button></sc-if>
                   <sc-if value="{{ s.hasNote }}" hint-placeholder-val="{{ false }}"><div style="font-size:10.5px;color:#8a6a1e;margin-top:3px">📝 {{ s.note }}</div></sc-if>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
                     <sc-if value="{{ s.canPay }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ s.pay }}" title="سجّل دفعة على فواتير المحل ده — الأقدم أولاً" style="border:none;background:#1f8a5b;color:#fff;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer">💵 سداد</button></sc-if>
                     <sc-if value="{{ s.acctOn }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ s.acct }}" title="المحل ده هو نفسه عميل — افتح حسابه المجمّع: اللي ليك عنده واللي ليه عندك، ومقاصة" style="border:none;background:#5b3a8a;color:#fff;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:700;cursor:pointer">⇄ الحساب المجمّع</button></sc-if>
                     <sc-if value="{{ s.canEdit }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ s.buy }}" title="فاتورة شراء جديدة باسم المحل ده" style="border:none;background:#152a4a;color:#fff;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;font-weight:600;cursor:pointer">＋ شراء</button></sc-if>
                     <sc-if value="{{ s.hasBuys }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ s.filter }}" title="اعرض فواتير المحل ده بس" style="border:1px solid #dbe2ec;background:#fff;color:#1d3a63;border-radius:7px;padding:4px 10px;font-size:11px;font-family:inherit;cursor:pointer">🔍 الفواتير</button></sc-if>
+                    <sc-if value="{{ s.canSwap }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ s.swapNew }}" title="بدل جديد مع المحل ده — شلت منو أو شال منك" style="border:1px solid #ecdcb4;background:#fffaf0;color:#8a6a1e;border-radius:7px;padding:4px 9px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer">⇄ بدل</button></sc-if>
                     <sc-if value="{{ s.canEdit }}" hint-placeholder-val="{{ true }}"><button sc-camel-on-click="{{ s.edit }}" title="تعديل الاسم والرقم والمكان" style="border:1px solid #dbe2ec;background:#fff;color:#1d3a63;border-radius:7px;padding:4px 9px;font-size:11px;font-family:inherit;cursor:pointer">✎</button></sc-if>
                     <sc-if value="{{ s.canDelete }}" hint-placeholder-val="{{ false }}"><button sc-camel-on-click="{{ s.del }}" title="حذف من الدليل" style="border:1px solid #f0d6d1;background:#fff;color:#c0392b;border-radius:7px;padding:4px 9px;font-size:11px;font-family:inherit;cursor:pointer">🗑</button></sc-if>
                   </div>
@@ -8866,11 +8869,16 @@
           <button sc-camel-on-click="{{ closeSwap }}" style="background:rgba(255,255,255,.16);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;font-family:inherit;flex-shrink:0">×</button>
         </div>
         <div style="padding:16px 20px">
-          <label style="font-size:11.5px;color:#7d8aa0;display:block;margin-bottom:5px">اسم الجار (المحل)</label>
+          <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button sc-camel-on-click="{{ swfSetIn }}" style="{{ swfInStyle }}">⬇ شلت منو</button>
+            <button sc-camel-on-click="{{ swfSetOut }}" style="{{ swfOutStyle }}">⬆ شال مني</button>
+          </div>
+          <label style="font-size:11.5px;color:#7d8aa0;display:block;margin-bottom:5px">اسم الجار (المحل) — أو اختار من المحلات اللي بتشتري منها</label>
           <input id="pos-sw-nb" value="{{ swfNb }}" sc-camel-on-input="{{ onSwfNb }}" placeholder="مثلاً: محل الأمين" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cfd8e6;border-radius:9px;font-size:14px;font-family:inherit;outline:none;margin-bottom:6px">
           <sc-if value="{{ swfHasNbHits }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px"><sc-for list="{{ swfNbHits }}" as="nb" hint-placeholder-count="2"><button sc-camel-on-click="{{ nb.pick }}" style="border:1px solid #dbe2ec;background:#f8fafc;border-radius:20px;padding:4px 11px;font-family:inherit;font-size:12px;color:#1d3a63;cursor:pointer">{{ nb.name }}</button></sc-for></div>
           </sc-if>
+          <sc-if value="{{ swfHasNbInfo }}" hint-placeholder-val="{{ false }}"><div style="font-size:11.5px;color:{{ swfNbInfoColor }};margin:0 0 8px;line-height:1.6">{{ swfNbInfo }}</div></sc-if>
           <input value="{{ swfPhone }}" sc-camel-on-input="{{ onSwfPhone }}" inputmode="tel" placeholder="رقم الجار (اختياري)" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid #cfd8e6;border-radius:9px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;outline:none;margin-bottom:12px">
           <sc-if value="{{ swfShowLocs }}" hint-placeholder-val="{{ false }}">
             <div style="font-size:11.5px;color:#7d8aa0;margin-bottom:6px">{{ swfLocLabel }}</div>
@@ -17214,6 +17222,28 @@ class Component extends DCLogic {
     this.setState({ swForm: { dir: dir === 'out' ? 'out' : 'in', neighbor: '', phone: '', locId: this.state.branchId, q: '', rows: [], note: '' } });
   };
   closeSwap = () => this.setState({ swForm: null });
+  swSetDir = (d) => () => this.setState(s => (s.swForm ? { swForm: { ...s.swForm, dir: d === 'out' ? 'out' : 'in' } } : null));
+  // «⇄ بدل» من كرت المحل في دليل المحلات: النافذة بتفتح باسمو ورقمو
+  openSwapWith = (key) => () => {
+    if (!this.can('editStock')) return this.toast('البدل محتاج صلاحية «تعديل المخزون»', 'err');
+    const e = this.supByKey(key);
+    if (!e) return;
+    this.setState({ swForm: { dir: 'in', neighbor: e.name, phone: e.phone || '', locId: this.state.branchId, q: '', rows: [], note: '' } });
+  };
+  // «⇄ البدل» من كرت المحل: شاشة البدل متفلترة عليه
+  showSwapsOf = (key) => () => {
+    const e = this.supByKey(key);
+    if (!e) return;
+    if (!this.canSee('swaps')) return this.toast('شاشة البدل مقفولة في صلاحياتك', 'err');
+    this.setState({ screen: 'swaps', swQ: e.name, swView: 'all', swDir: '' });
+  };
+  // «🧾 بتشتري منو» من كرت البدل: فواتير الشراء بتاعتو
+  showBuysOf = (key) => () => {
+    const e = this.supByKey(key);
+    if (!e) return;
+    if (!this.canSee('purchases')) return this.toast('شاشة المشتريات مقفولة في صلاحياتك', 'err');
+    this.setState({ screen: 'purchases', puQuery: e.name, puStatus: 'all' });
+  };
   setSwF = (k) => (e) => {
     const v = k === 'phone' ? String(e.target.value).replace(/[^0-9+]/g, '') : e.target.value;
     this.setState(s => (s.swForm ? { swForm: { ...s.swForm, [k]: v } } : null));
@@ -17252,8 +17282,12 @@ class Component extends DCLogic {
       rows, backs: [], note: String(f.note || '').trim(), user: this.currentUser(), device: this.deviceLabel() };
     const deltas = {};
     rows.forEach(r => { deltas[r.pn] = (deltas[r.pn] || 0) + (out ? -r.qty : r.qty); });
-    this.setState(s => ({ swaps: [rec].concat(s.swaps || []), swForm: null, ...this.swapStockPatch(s, loc, deltas) }),
-      () => this.saveNow('swaps', 'stock', 'products'));
+    const nbKey = this.supKey(nb);
+    const saveSup = S.role === 'manager' && nbKey && !this.savedSuppliers().some(x => this.supKey(x.name) === nbKey);
+    this.setState(s => ({ swaps: [rec].concat(s.swaps || []), swForm: null, ...this.swapStockPatch(s, loc, deltas),
+      ...(saveSup ? { settings: { ...s.settings, suppliers: this.supUpsert(((s.settings || {}).suppliers) || [], nb,
+        { phone: rec.phone, kind: 'local' }) } } : {}) }),
+      () => { this.saveNow('swaps', 'stock', 'products'); if (saveSup) { this.persistSettings(); this.saveNow('settings'); } });
     this.audit('بدل', (out ? '⬆ ' + nb + ' شال مننا' : '⬇ شلنا من ' + nb) + ' — بدل #' + rec.no + ' — '
       + rows.map(r => r.ar + ' ×' + r.qty).join('، ') + ' — ' + (out ? 'طلع من ' : 'دخل ') + this.swapLocName(loc, bid) + (rec.note ? ' — ' + rec.note : ''));
     this.toast('⇄ اتسجّل البدل #' + rec.no + ' — ' + (out ? 'لينا عند ' : 'علينا لـ') + nb);
@@ -20923,7 +20957,8 @@ class Component extends DCLogic {
       const k = this.supKey(name);
       if (!k) return null;
       if (!map[k]) map[k] = { key: k, name: String(name).trim(), phone: '', place: '', kind: '', note: '', id: '', saved: false,
-        count: 0, total: 0, owed: 0, lastDate: '', lastTs: 0, addedTs: 0, lastPlace: '', lastPhone: '', kinds: {} };
+        count: 0, total: 0, owed: 0, lastDate: '', lastTs: 0, addedTs: 0, lastPlace: '', lastPhone: '', kinds: {},
+        swCount: 0, swOpen: 0, swOwe: 0, swOwn: 0, swTs: 0, swPhone: '' };
       return map[k];
     };
     this.savedSuppliers().forEach(s => {
@@ -20944,13 +20979,24 @@ class Component extends DCLogic {
         if (p.supplierPhone) e.lastPhone = p.supplierPhone;
       }
     });
+    // ⇄ جيران البدل: نفس المحل اللي بتشتري منو بيتجمع معاه (نفس المفتاح)
+    (this.state.swaps || []).forEach(x => {
+      if (!x) return;
+      const e = add(x.neighbor); if (!e) return;
+      e.swCount++;
+      if (this.swapIsOpen(x)) { e.swOpen++; if (x.dir === 'in') e.swOwe += this.swapLeft(x); else e.swOwn += this.swapLeft(x); }
+      const ts = Number(x.ts) || 0;
+      if (ts >= e.swTs) e.swTs = ts;
+      if (x.phone && ts >= (e.swPhoneTs || 0)) { e.swPhone = x.phone; e.swPhoneTs = ts; }   // آخر رقم اتكتب
+    });
     return Object.keys(map).map(k => {
       const e = map[k];
-      e.phone = e.phone || e.lastPhone;
+      e.phone = e.phone || e.lastPhone || e.swPhone;
+      if (!e.kind && !e.count && e.swCount) e.kind = 'local';
       e.place = e.place || e.lastPlace;
       if (!e.kind) e.kind = e.kinds.local && !e.kinds.import ? 'local' : (e.kinds.import && !e.kinds.local ? 'import' : '');
       return e;
-    }).sort((a, b) => Math.max(b.lastTs, b.addedTs) - Math.max(a.lastTs, a.addedTs));
+    }).sort((a, b) => Math.max(b.lastTs, b.addedTs, b.swTs) - Math.max(a.lastTs, a.addedTs, a.swTs));
   }
   supByKey(key) { return this.supplierDirectory().find(e => e.key === key) || null; }
   // بيحفظ المحل في الدليل (أو يحدّث رقمو ومكانو لو اتكتبوا جديد) — بيرجّع القائمة الجديدة
@@ -21005,8 +21051,9 @@ class Component extends DCLogic {
     // وإلا المحل بيظهر مرتين (القديم من الفواتير والجديد من الدليل)
     const renamed = old && old.key !== nk;
     let rename = false;
-    if (renamed && old.count > 0) {
-      rename = confirm('تغيّر الاسم من «' + old.name + '» لـ«' + name + '» في ' + old.count + ' فاتورة شراء كمان؟'
+    if (renamed && (old.count > 0 || old.swCount > 0)) {
+      rename = confirm('تغيّر الاسم من «' + old.name + '» لـ«' + name + '» في '
+        + [old.count ? old.count + ' فاتورة شراء' : '', old.swCount ? old.swCount + ' بدل' : ''].filter(Boolean).join(' و') + ' كمان؟'
         + '\n\n(لو قلت لا، الفواتير القديمة بتفضل بالاسم القديم ويظهر في الدليل منفصل)');
     }
     const rec = { name, phone: String(f.phone || '').trim(), place: String(f.place || '').trim(),
@@ -21017,8 +21064,9 @@ class Component extends DCLogic {
       const prev = old ? (((s.settings || {}).suppliers) || []).find(x => this.supKey(x.name) === old.key) : null;
       list.unshift({ id: (prev && prev.id) || ('sup' + Date.now().toString(36)), ts: (prev && prev.ts) || Date.now(), ...rec });
       return { supForm: null, settings: { ...s.settings, suppliers: list },
-        ...(rename ? { purchases: (s.purchases || []).map(p => this.supKey(p.supplier) === old.key ? { ...p, supplier: name } : p) } : {}) };
-    }, () => { this.persistSettings(); this.saveNow('settings'); if (rename) this.saveNow('purchases'); });
+        ...(rename ? { purchases: (s.purchases || []).map(p => this.supKey(p.supplier) === old.key ? { ...p, supplier: name } : p),
+          swaps: (s.swaps || []).map(x => this.supKey(x.neighbor) === old.key ? { ...x, neighbor: name } : x) } : {}) };
+    }, () => { this.persistSettings(); this.saveNow('settings'); if (rename) this.saveNow('purchases', 'swaps'); });
     this.audit(f._new ? 'إضافة مورّد' : 'تعديل مورّد', name + (rec.phone ? ' — ' + rec.phone : '') + (rec.place ? ' — ' + rec.place : '')
       + (renamed ? ' (كان «' + old.name + '»' + (rename ? '، واتغيّر في ' + old.count + ' فاتورة شراء' : '') + ')' : ''));
     this.toast(f._new ? 'اتحفظ «' + name + '» في دليل المحلات' : 'اتحفظت بيانات «' + name + '»');
@@ -21028,6 +21076,7 @@ class Component extends DCLogic {
     const e = this.supByKey(key);
     if (!e) return;
     if (e.count > 0) return this.toast('«' + e.name + '» عليه ' + e.count + ' فاتورة شراء — ما بيتحذف من الدليل عشان الفواتير المسجّلة باسمه', 'err');
+    if (e.swCount > 0) return this.toast('«' + e.name + '» ليه ' + e.swCount + ' بدل متسجّل — ما بيتحذف من الدليل', 'err');
     if (!confirm('حذف «' + e.name + '» من دليل المحلات؟')) return;
     this.setState(s => ({ supForm: null, settings: { ...s.settings, suppliers: (((s.settings || {}).suppliers) || []).filter(x => this.supKey(x.name) !== key) } }),
       () => { this.persistSettings(); this.saveNow('settings'); });
@@ -32321,7 +32370,7 @@ class Component extends DCLogic {
       out.supCount = dir.length;
       out.supTitle = '🏪 المحلات والمورّدين' + (dir.length ? ' (' + dir.length + ')' : '');
       out.supSub = dir.length
-        ? ('بتتحفظ تلقائياً مع كل فاتورة شراء، وبتظهر أول ما تكتب الاسم'
+        ? ('بتتحفظ تلقائياً مع كل فاتورة شراء أو بدل، وبتظهر أول ما تكتب الاسم'
           + (dir.some(e => e.owed > 0) ? ' — المتبقي للمورّدين: ' + this.money(dir.reduce((s, e) => s + e.owed, 0)) : ''))
         : 'ما في محلات محفوظة — أضف المحلات اللي بتشتري منها، أو بتتحفظ تلقائياً أول ما تسجّل فاتورة شراء.';
       out.supEmpty = dir.length === 0;
@@ -32352,7 +32401,12 @@ class Component extends DCLogic {
         note: e.note || '', hasNote: !!e.note,
         canEdit: out.canPurchase,
         canPay: out.canPurchase && e.owed > 0, pay: this.openSupPay(e.key),
-        canDelete: out.canPurchase && e.count === 0,
+        canDelete: out.canPurchase && e.count === 0 && !e.swCount,
+        hasSwap: e.swCount > 0,
+        swapText: '⇄ البدل: ' + (e.swOpen ? [e.swOwe ? 'علينا ليهو ' + e.swOwe + ' قطعة' : '', e.swOwn ? 'لينا عندو ' + e.swOwn + ' قطعة' : ''].filter(Boolean).join(' • ')
+          : e.swCount + ' بدل — كلو راجع ✔'),
+        swapColor: e.swOwe ? '#c0392b' : (e.swOwn ? '#1d6f42' : '#7d8aa0'),
+        canSwap: this.can('editStock'), swapNew: this.openSwapWith(e.key), swaps: this.showSwapsOf(e.key),
         hasBuys: e.count > 0,
         buy: this.buyFromSupplier(e.key), filter: this.filterBySupplier(e.key),
         edit: this.editSupplier(e.key), del: this.deleteSupplier(e.key)
@@ -32667,6 +32721,9 @@ class Component extends DCLogic {
     out.openSwapIn = this.openSwap('in'); out.openSwapOut = this.openSwap('out');
     out.onSwQ = (e) => this.setState({ swQ: e.target.value });
     if (screen === 'swaps') {
+      const supMap = {};
+      const seeBuys = this.canSee('purchases');   // أرقام المشتريات للي شايف شاشتها بس
+      this.supplierDirectory().forEach(e => { supMap[e.key] = e; });
       const swCanScope = isManager && this.branches().length > 1;
       const swScope = swCanScope ? (S.swScope || 'current') : 'current';
       const swAll = this.swapsOf(swScope);
@@ -32703,11 +32760,14 @@ class Component extends DCLogic {
         emptyText: swq ? 'ما في بدل بالبحث ده' : (swView === 'open' ? 'ما في بدل مفتوح — كل حاجة راجعة 👍' : 'لسه ما سجّلت أي بدل'),
         list: swList.slice(0, 200).map(x => {
           const open = this.swapIsOpen(x), isIn = x.dir === 'in', left = this.swapLeft(x), bid = x.branchId || S.branchId;
+          const sup = supMap[this.supKey(x.neighbor)] || null;
           return {
+            hasSup: !!(sup && sup.count && seeBuys), supText: sup && sup.count && seeBuys ? '🧾 بتشتري منو — ' + sup.count + ' فاتورة' + (sup.owed > 0 ? ' • ليهو ' + this.money(sup.owed) : '') : '',
+            goSup: sup ? this.showBuysOf(sup.key) : null,
             no: 'بدل #' + x.no, when: (x.date || '') + (x.time ? ' ' + x.time : ''),
             dirText: isIn ? '⬇ شلنا من' : '⬆ شال مننا',
             dirStyle: 'font-size:11.5px;font-weight:700;border-radius:20px;padding:3px 10px;white-space:nowrap;background:' + (isIn ? '#fff4e0;color:#9a6a12' : '#eaf2fd;color:#1d3a63'),
-            neighbor: x.neighbor || '—', phone: x.phone || '',
+            neighbor: x.neighbor || '—', phone: x.phone || (sup && sup.phone) || '',
             status: x.closed ? '✔ اتقفل' : (open ? 'باقي ' + left + ' قطعة' : '✔ رجع كلو'),
             statusStyle: 'margin-inline-start:auto;font-size:11.5px;font-weight:700;white-space:nowrap;color:' + (open ? (isIn ? '#c0392b' : '#1d6f42') : '#7d8aa0'),
             cardStyle: 'background:#fff;border:1px solid ' + (open ? (isIn ? '#f0d9a8' : '#cfe0f5') : '#e6ebf3') + ';border-radius:14px;padding:13px 15px;'
@@ -32746,10 +32806,23 @@ class Component extends DCLogic {
         out.swfHeadBg = isIn ? '#8a6a1e' : '#1d3a63';
         out.swfNb = f.neighbor || ''; out.onSwfNb = this.setSwF('neighbor');
         out.swfPhone = f.phone || ''; out.onSwfPhone = this.setSwF('phone');
-        const nq = String(f.neighbor || '').trim().toLowerCase();
-        out.swfNbHits = this.swapNeighbors().filter(nb => !nq || (nb.name.toLowerCase().includes(nq) && nb.name.toLowerCase() !== nq)).slice(0, 6)
-          .map(nb => ({ name: nb.name, pick: this.swPickNb(nb) }));
+        const nk = this.supKey(f.neighbor);
+        const dirAll = this.supplierDirectory();
+        const exact = nk ? dirAll.find(e => e.key === nk) : null;
+        out.swfNbHits = dirAll.filter(e => !nk || (e.key.indexOf(nk) >= 0 && e.key !== nk)).slice(0, 8)
+          .map(e => ({ name: (e.count ? '🏪 ' : (e.swCount ? '⇄ ' : '')) + e.name, pick: this.swPickNb({ name: e.name, phone: e.phone }) }));
         out.swfHasNbHits = out.swfNbHits.length > 0;
+        out.swfNbInfo = exact
+          ? ['✔ في دليل المحلات', exact.phone ? '📞 ' + exact.phone : '', exact.place ? '📍 ' + exact.place : '',
+            exact.count && this.canSee('purchases') ? exact.count + ' فاتورة شراء' : '', exact.swOwe ? 'علينا ليهو ' + exact.swOwe + ' قطعة' : '',
+            exact.swOwn ? 'لينا عندو ' + exact.swOwn + ' قطعة' : ''].filter(Boolean).join(' • ')
+          : (nk ? '＋ جار جديد — بيظهر في دليل المحلات مع اللي بتشتري منهم' : '');
+        out.swfHasNbInfo = !!out.swfNbInfo;
+        out.swfNbInfoColor = exact ? '#1d6f42' : '#8a6a1e';
+        const dirChip = (on) => 'flex:1;padding:9px;border-radius:9px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer;border:2px solid '
+          + (on ? '#1d3a63' : '#e2e8f1') + ';background:' + (on ? '#eef4fd' : '#fff') + ';color:' + (on ? '#1d3a63' : '#7d8aa0');
+        out.swfInStyle = dirChip(isIn); out.swfOutStyle = dirChip(!isIn);
+        out.swfSetIn = this.swSetDir('in'); out.swfSetOut = this.swSetDir('out');
         out.swfLocLabel = isIn ? 'القطع دخلت وين؟' : 'القطع طلعت من وين؟';
         const locs = this.swapLocs(S.branchId);
         out.swfShowLocs = locs.length > 1;
